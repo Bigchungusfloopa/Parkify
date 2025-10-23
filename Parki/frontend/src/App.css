@@ -1,0 +1,138 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@800&display=swap');
+
+.auth-page {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.auth-container {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+.logo-text {
+  font-family: 'Poppins', sans-serif;
+  font-size: 3.5rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 1.5rem;
+  letter-spacing: 2px;
+  text-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+}
+
+.auth-form {
+  background: rgba(25, 25, 30, 0.6);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 2rem 2.5rem;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  text-align: center;
+}
+
+.auth-form h2 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  font-size: 2rem;
+  color: white;
+}
+
+.input-group {
+  text-align: left;
+  margin-bottom: 1.5rem;
+}
+.input-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #c0c0c0;
+  font-size: 0.9rem;
+}
+.input-group input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: #fff;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+.auth-button {
+  width: 100%;
+  padding: 0.8rem;
+  border: none;
+  border-radius: 8px;
+  background-color: #4a90e2;
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-top: 1rem;
+}
+
+.auth-link {
+  margin-top: 1.5rem;
+  font-size: 0.9rem;
+  color: #b0b0b0;
+}
+.auth-link a {
+  color: #4a90e2;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.error-message {
+  color: #f87171;
+  background-color: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  padding: 0.75rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+/* Add these styles to App.css */
+
+.admin-checkbox-group {
+    text-align: left;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem; /* Space between checkbox and label */
+}
+
+.admin-checkbox-group input[type="checkbox"] {
+    width: auto; /* Override default input width */
+    accent-color: #4a90e2; /* Style the checkmark color */
+    cursor: pointer;
+}
+
+.admin-checkbox-group label {
+    margin-bottom: 0; /* Remove default label margin */
+    color: #c0c0c0;
+    font-size: 0.9rem;
+    cursor: pointer;
+}

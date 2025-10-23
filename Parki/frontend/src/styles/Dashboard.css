@@ -1,0 +1,618 @@
+.dashboard-page {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.dashboard-header {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2.5rem;
+  margin: 1rem 2rem;
+  background: rgba(25, 25, 30, 0.5);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 15px;
+}
+
+.dashboard-main-content {
+  flex-grow: 1;
+  display: flex;
+  padding: 0 2rem 2rem 2rem;
+  gap: 2rem;
+  position: relative;
+  z-index: 5;
+  overflow: hidden;
+}
+
+.logo-text-dashboard {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: white;
+}
+
+.dashboard-nav .nav-button {
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-left: 1rem;
+}
+
+.history-button {
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.history-button:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.logout-button {
+  background-color: #dc2626; /* Red color */
+  color: #fecaca;
+  border: 1px solid #991b1b;
+}
+
+.logout-button:hover {
+  background-color: #b91c1c; /* Darker red on hover */
+}
+
+.sidebar {
+  width: 350px;
+  flex-shrink: 0;
+  padding-right: 1rem;
+}
+
+.greeting {
+  font-size: 1.1rem;
+  color: #d1d5db;
+  margin: 0;
+}
+
+.select-floor-title {
+  font-size: 2.5rem;
+  margin: 0.5rem 0 2rem 0;
+  color: white;
+}
+
+.parking-lot-graphic {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    background: rgba(35, 35, 45, 0.6);
+    backdrop-filter: blur(8px);
+    overflow: hidden;
+}
+
+.floor-level {
+    padding: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: background-color 0.3s ease, border-left 0.3s ease;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-left: 4px solid transparent;
+}
+
+.floor-level:last-child {
+    border-bottom: none;
+}
+
+.floor-level:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.floor-level.selected {
+    background-color: rgba(74, 144, 226, 0.2);
+    border-left: 4px solid #4a90e2;
+}
+
+.floor-info h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.5rem;
+    color: white;
+}
+
+.floor-info p {
+    margin: 0;
+    color: #9ca3af;
+}
+
+/* --- Floor Plan/Info Card Area --- */
+.floor-plan-view {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column; /* Allow header and content to stack */
+  justify-content: flex-start; /* Align content to top */
+  align-items: stretch; /* Stretch children to fill width */
+  overflow-y: auto; /* Allow this area to scroll if needed */
+  padding: 1rem; /* Add some padding */
+}
+
+/* Wrapper for info cards and recent bookings */
+.dashboard-overview {
+    display: flex;
+    flex-direction: column; /* Stack sections vertically */
+    gap: 2rem; /* Space between info cards and recent bookings */
+    width: 100%;
+}
+
+
+/* Grid layout for the info cards */
+.info-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    width: 100%;
+}
+
+/* Styling for individual info cards */
+.info-card {
+    background: rgba(30, 41, 59, 0.7); /* Dark blue-gray, semi-transparent */
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 1.5rem;
+    backdrop-filter: blur(5px);
+    display: flex;
+    flex-direction: column;
+}
+
+.info-card h3 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    font-size: 1.25rem;
+    color: white;
+    border-bottom: 1px solid #334155;
+    padding-bottom: 0.75rem;
+    flex-shrink: 0;
+}
+
+.info-card-content {
+    flex-grow: 1;
+}
+
+.info-card-content p {
+    margin: 0.5rem 0;
+    color: #cbd5e1;
+    font-size: 0.95rem;
+}
+
+/* Google-like Weather Card Styles */
+.info-card.weather-card { } /* Use base .info-card style */
+
+.weather-card .info-card-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex-grow: 1;
+}
+.weather-card h3 {
+    text-align: center;
+    border-bottom: none;
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+.weather-temp {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: white;
+    margin: 0.5rem 0 !important;
+}
+.weather-desc {
+    font-size: 1.1rem;
+    margin: 0 0 0.5rem 0 !important;
+    color: #cbd5e1;
+}
+.weather-feels {
+    font-size: 0.9rem;
+    color: #9ca3af;
+    margin: 0 !important;
+}
+
+/* --- Floor Map Styles (when a floor is selected) --- */
+.floor-map-loading {
+    color: #9ca3af;
+    font-size: 1.2rem;
+    margin-top: 4rem;
+    width: 100%; /* Ensure it takes space */
+    text-align: center;
+}
+
+.floor-map-container {
+    width: 100%;
+    height: 100%; /* Take available height */
+    text-align: left;
+    overflow-y: auto; /* Allow slot map to scroll */
+}
+
+.floor-map-header {
+    display: flex;
+    align-items: center; /* Vertically align button and title */
+    margin-bottom: 2rem;
+}
+.floor-map-header h2 {
+    font-size: 2rem;
+    color: white;
+    margin: 0;
+}
+
+/* Style for the back button */
+.back-button {
+    background: none;
+    border: 1px solid #4B5563;
+    color: #9ca3af;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    margin-right: 1rem;
+}
+.back-button:hover {
+    background: rgba(255,255,255,0.1);
+    color: white;
+    border-color: #6b7280;
+}
+
+.slot-group {
+    margin-bottom: 2.5rem;
+}
+
+.slot-group-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: #d1d5db;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.slots-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 1rem;
+}
+
+.parking-slot-box {
+    aspect-ratio: 1 / 1;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    font-weight: bold;
+    border: 2px solid;
+    transition: all 0.2s ease-in-out;
+    position: relative;
+}
+
+/* Base AVAILABLE Colors by Type */
+.parking-slot-box.available.regular,
+.parking-slot-box.available.twowheeler {
+    background-color: rgba(59, 130, 246, 0.5); /* Blue */
+    border-color: #3b82f6;
+    color: #eff6ff;
+}
+.parking-slot-box.available.ev,
+.parking-slot-box.available.twowheelerev {
+    background-color: rgba(34, 197, 94, 0.5); /* Green */
+    border-color: #22c55e;
+    color: #f0fdf4;
+}
+.parking-slot-box.available.vip {
+    background-color: rgba(28, 25, 23, 0.5); /* Black */
+    border-color: #facc15; /* Gold */
+    color: #fde68a;
+}
+
+/* Interaction for AVAILABLE slots */
+.parking-slot-box.available {
+    cursor: pointer;
+}
+.parking-slot-box.available.regular:hover,
+.parking-slot-box.available.twowheeler:hover {
+    background-color: rgba(59, 130, 246, 0.7);
+    border-color: #60a5fa;
+}
+.parking-slot-box.available.ev:hover,
+.parking-slot-box.available.twowheelerev:hover {
+    background-color: rgba(34, 197, 94, 0.7);
+    border-color: #4ade80;
+}
+.parking-slot-box.available.vip:hover {
+    background-color: rgba(41, 37, 36, 0.7);
+    border-color: #fde047;
+}
+
+/* Label for EV slot type */
+.ev-type-label {
+    position: absolute;
+    top: 6px;
+    left: 8px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    color: rgba(209, 213, 219, 0.7);
+}
+.parking-slot-box.vip .ev-type-label { display: none; }
+
+/* Style for RESERVED Slots (Yellow) */
+.parking-slot-box.reserved {
+    background-color: rgba(250, 204, 21, 0.5);
+    border-color: #facc15;
+    color: #fef9c3;
+    cursor: not-allowed;
+}
+
+/* Style for OCCUPIED Slots (Red) */
+.parking-slot-box.occupied {
+    background-color: rgba(239, 68, 68, 0.5) !important;
+    border-color: #ef4444 !important;
+    color: #fecaca !important;
+    cursor: not-allowed;
+}
+
+/* --- Tooltip Styles --- */
+.tooltip-container {
+    position: relative;
+    display: inline-block;
+}
+.info-icon {
+    font-size: 1rem;
+    color: #9ca3af;
+    cursor: help;
+    border: 1px solid #9ca3af;
+    border-radius: 50%;
+    width: 1.2em;
+    height: 1.2em;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+}
+.tooltip-text {
+    visibility: hidden;
+    opacity: 0;
+    width: 220px;
+    background-color: #1e293b;
+    color: #e5e7eb;
+    text-align: left;
+    border-radius: 8px;
+    padding: 1rem;
+    position: absolute;
+    z-index: 10;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -110px;
+    border: 1px solid #334155;
+    transition: opacity 0.3s;
+}
+.tooltip-text strong { color: #facc15; }
+.tooltip-text ul {
+    list-style-type: '✓  ';
+    padding-left: 1.2rem;
+    margin: 0.5rem 0 0 0;
+    font-size: 0.9rem;
+    color: #d1d5db;
+}
+.tooltip-container:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* --- Modal Styles --- */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+.modal-content {
+    background: #1e293b;
+    padding: 2rem;
+    border-radius: 15px;
+    border: 1px solid #334155;
+    width: 90%;
+    max-width: 450px;
+}
+.modal-content h2 {
+    margin-top: 0;
+    color: white;
+}
+.modal-subtitle {
+    color: #9ca3af;
+    margin: 2rem 0;
+}
+.modal-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+.modal-actions button {
+    flex-grow: 1;
+    padding: 0.8rem;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    border: none;
+}
+.modal-actions .btn-primary {
+    background-color: #10B981;
+    color: white;
+}
+.modal-actions .btn-secondary {
+    background-color: #4B5563;
+    color: white;
+}
+.form-group {
+    text-align: left;
+    margin-bottom: 1rem;
+}
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #d1d5db;
+}
+.form-group input {
+    width: 100%;
+    padding: 0.75rem;
+    background: #0f172a;
+    border: 1px solid #334155;
+    color: white;
+    border-radius: 6px;
+    box-sizing: border-box;
+}
+.price-display {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background: rgba(15, 23, 42, 0.7);
+    border: 1px solid #334155;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 1.1rem;
+    color: #cbd5e1;
+}
+.price-display strong {
+    color: white;
+    font-size: 1.3rem;
+}
+.price-display.total {
+    font-size: 1.3rem;
+}
+.price-display.total strong {
+    font-size: 1.6rem;
+}
+.payment-options {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+.payment-btn {
+    flex-grow: 1;
+    padding: 0.7rem;
+    border-radius: 6px;
+    border: 1px solid #4b5563;
+    background: #374151;
+    color: #d1d5db;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.payment-btn:hover {
+    border-color: #6b7280;
+}
+.payment-btn.active {
+    border-color: #3b82f6;
+    background: #1e3a8a;
+    color: white;
+}
+.card-details-row {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-end;
+}
+.cvv-group {
+    flex-basis: 100px;
+    flex-shrink: 0;
+}
+.cvv-group input {
+    text-align: center;
+}
+.validation-error {
+    color: #f87171;
+    background-color: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    padding: 0.75rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+/* --- Recent Bookings Section Styles --- */
+.recent-bookings-section {
+    background: rgba(30, 41, 59, 0.7);
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 1.5rem;
+    backdrop-filter: blur(5px);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.recent-bookings-section h3 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    font-size: 1.25rem;
+    color: white;
+    border-bottom: 1px solid #334155;
+    padding-bottom: 0.75rem;
+}
+
+.recent-bookings-list {
+    display: flex;
+    gap: 1.5rem;
+    overflow-x: auto;
+    padding-bottom: 0.5rem; /* Add padding for scrollbar */
+}
+
+.recent-booking-item {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 1rem;
+    min-width: 220px;
+    flex-shrink: 0;
+    position: relative;
+}
+
+.recent-booking-item p {
+    margin: 0.3rem 0;
+    font-size: 0.9rem;
+    color: #cbd5e1;
+}
+.recent-booking-item p strong {
+    color: #9ca3af;
+}
+
+.recent-booking-item .status-badge {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 99px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+.recent-booking-item .status-badge.active { background-color: #166534; color: #bbf7d0; }
+.recent-booking-item .status-badge.completed { background-color: #374151; color: #d1d5db; }

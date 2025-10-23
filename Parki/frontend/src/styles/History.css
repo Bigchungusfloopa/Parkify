@@ -1,0 +1,110 @@
+.history-page {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow-y: auto;
+  color: #e5e7eb;
+}
+
+.history-header {
+  position: relative;
+  z-index: 5;
+  padding: 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.back-link {
+  color: #9ca3af;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s;
+}
+.back-link:hover {
+  color: white;
+}
+
+.history-header h1 {
+  font-size: 2.5rem;
+  margin: 0.5rem 0 0 0;
+}
+
+.history-content {
+  position: relative;
+  z-index: 5;
+  padding: 0 2rem 2rem 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.history-list {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.history-card {
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.card-main-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  border-bottom: 1px solid #334155;
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+}
+
+.slot-info {
+  font-size: 1.75rem;
+  font-weight: bold;
+  color: white;
+}
+
+.floor-info {
+  font-size: 1rem;
+  color: #9ca3af;
+}
+
+.card-details p {
+  margin: 0.5rem 0;
+  color: #d1d5db;
+}
+.card-details p strong {
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+.card-footer-info {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #334155;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.price {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: white;
+}
+
+.status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 99px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.status-badge.active {
+  background-color: #166534;
+  color: #bbf7d0;
+}
+.status-badge.completed {
+  background-color: #374151;
+  color: #d1d5db;
+}
