@@ -11,6 +11,7 @@ import com.parkify.Park.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -24,6 +25,7 @@ public class BookingService {
     private static final double BASE_RATE_PER_HOUR = 100.0;
     private static final double EV_SURCHARGE = 50.0;
     private static final double VIP_SURCHARGE = 100.0;
+    private static final double HANDICAP_SURCHARGE = 0.0;
 
     // --- Validation Pattern ---
     private static final Pattern VEHICLE_NUMBER_PATTERN =
@@ -32,8 +34,10 @@ public class BookingService {
     // --- Repositories ---
     @Autowired
     private SlotRepository slotRepository;
+    
     @Autowired
     private UserRepository userRepository;
+    
     @Autowired
     private BookingRepository bookingRepository;
 
@@ -67,7 +71,7 @@ public class BookingService {
         // Calculate the price
         double calculatedPrice = calculateBookingPrice(slot, bookingRequest.getStartTime(), bookingRequest.getEndTime());
 
-        // Update slot status
+        // Update slot status (for UI purposes, actual availability check is done above)
         slot.setOccupied(true);
         slotRepository.save(slot);
 
@@ -75,13 +79,77 @@ public class BookingService {
         Booking booking = new Booking();
         booking.setSlot(slot);
         booking.setUser(user);
-        booking.setVehicleNumber(bookingRequest.getVehicleNumber().toUpperCase().replaceAll("[- ]", ""));
+        booking.setVehicleNumber(bookingRequest.getVehicleNumber().toUpperCase().replaceAll("[- ]", "")); // Standardize format
         booking.setStartTime(bookingRequest.getStartTime());
         booking.setEndTime(bookingRequest.getEndTime());
-        booking.setStatus("ACTIVE");
+        booking.setStatus("ACTIVE"); // Set initial status
         booking.setPrice(calculatedPrice);
 
-        return bookingRepository.save(booking);
+        return bookingRepository.save(booking); // Save and return the new booking
+    }
+
+    // --- Update Booking Method ---
+    @Transactional
+    public Booking updateBooking(Long bookingId, BookingRequestDto bookingRequest) {
+        Booking existingBooking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Booking not found with id: " + bookingId));
+
+        // Validate vehicle number
+        if (!isValidVehicleNumber(bookingRequest.getVehicleNumber())) {
+            throw new RuntimeException("Invalid vehicle number format.");
+        }
+
+        // Check for conflicting bookings (excluding the current booking)
+        List<Booking> conflictingBookings = bookingRepository.findConflictingBookingsExcludingCurrent(
+                bookingRequest.getSlotId(),
+                bookingRequest.getStartTime(),
+                bookingRequest.getEndTime(),
+                bookingId
+        );
+
+        if (!conflictingBookings.isEmpty()) {
+            throw new RuntimeException("This time slot is unavailable or already booked.");
+        }
+
+        // Find the slot
+        Slot slot = slotRepository.findById(bookingRequest.getSlotId())
+                .orElseThrow(() -> new RuntimeException("Slot not found"));
+
+        // Calculate new price
+        double calculatedPrice = calculateBookingPrice(slot, bookingRequest.getStartTime(), bookingRequest.getEndTime());
+
+        // Update booking details
+        existingBooking.setVehicleNumber(bookingRequest.getVehicleNumber().toUpperCase().replaceAll("[- ]", ""));
+        existingBooking.setStartTime(bookingRequest.getStartTime());
+        existingBooking.setEndTime(bookingRequest.getEndTime());
+        existingBooking.setPrice(calculatedPrice);
+
+        return bookingRepository.save(existingBooking);
+    }
+
+    // --- Cancel Booking Method ---
+    @Transactional
+    public void cancelBooking(Long bookingId) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Booking not found with id: " + bookingId));
+
+        // Free up the slot
+        Slot slot = booking.getSlot();
+        slot.setOccupied(false);
+        slotRepository.save(slot);
+
+        // Update booking status
+        booking.setStatus("CANCELLED");
+        bookingRepository.save(booking);
+    }
+
+    // --- Delete Booking Permanently (Admin Only) ---
+    @Transactional
+    public void deleteBooking(Long bookingId) {
+        if (!bookingRepository.existsById(bookingId)) {
+            throw new RuntimeException("Booking not found with id: " + bookingId);
+        }
+        bookingRepository.deleteById(bookingId);
     }
 
     // --- Get Booking History Method ---
@@ -89,7 +157,7 @@ public class BookingService {
     public List<BookingHistoryDto> getBookingHistoryForUser(Long userId) {
         // Fetch bookings for the user, ordered by start time descending
         List<Booking> bookings = bookingRepository.findByUserIdOrderByStartTimeDesc(userId);
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(); // Get current time once for comparison
 
         // Convert Booking entities to BookingHistoryDto objects
         return bookings.stream().map(booking -> {
@@ -100,7 +168,7 @@ public class BookingService {
             dto.setStartTime(booking.getStartTime());
             dto.setEndTime(booking.getEndTime());
 
-            // FIXED: Better status calculation
+            // Determine status: "COMPLETED" if endTime is in the past, otherwise use DB status
             if (booking.getEndTime() != null && booking.getEndTime().isBefore(now)) {
                 dto.setStatus("COMPLETED");
             } else if (booking.getStartTime() != null && booking.getStartTime().isAfter(now)) {
@@ -139,13 +207,17 @@ public class BookingService {
         double durationHours = Math.max(1.0, Math.ceil(durationMinutes / 60.0));
 
         double hourlyRate = BASE_RATE_PER_HOUR;
-        String slotType = slot.getType();
+        String slotType = slot.getType(); // Get type once for efficiency
 
         // Add surcharges based on slot type
-        if (slotType != null && (slotType.equals("EV") || slotType.equals("Two-Wheeler-EV"))) {
-            hourlyRate += EV_SURCHARGE;
-        } else if (slotType != null && slotType.equals("VIP")) {
-            hourlyRate += VIP_SURCHARGE;
+        if (slotType != null) {
+            if (slotType.equals("EV") || slotType.equals("Two-Wheeler-EV")) {
+                hourlyRate += EV_SURCHARGE;
+            } else if (slotType.equals("VIP")) {
+                hourlyRate += VIP_SURCHARGE;
+            } else if (slotType.equals("Handicap")) {
+                hourlyRate += HANDICAP_SURCHARGE; // Handicap slots are usually free or same price
+            }
         }
 
         return hourlyRate * durationHours;

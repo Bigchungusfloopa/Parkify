@@ -8,6 +8,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.UUID;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 @Service
@@ -17,11 +22,31 @@ public class AuthService {
     private static final Pattern PASSWORD_PATTERN =
             Pattern.compile("^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z]).{8,}$");
 
+    // Add password reset token storage
+    private final Map<String, PasswordResetToken> resetTokens = new HashMap<>();
+    
     @Autowired
     private UserRepository userRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    // Add this inner class
+    private static class PasswordResetToken {
+        String token;
+        String email;
+        LocalDateTime expiryDate;
+        
+        PasswordResetToken(String token, String email) {
+            this.token = token;
+            this.email = email;
+            this.expiryDate = LocalDateTime.now().plusHours(1); // 1 hour expiry
+        }
+        
+        boolean isExpired() {
+            return LocalDateTime.now().isAfter(expiryDate);
+        }
+    }
 
     // --- User Registration ---
     public User registerUser(RegisterDto registerDto) {
@@ -57,7 +82,7 @@ public class AuthService {
         return user; // Return the found user
     }
 
-    // --- Forgot Password Methods (Simulation) ---
+    // --- Forgot Password Methods (Enhanced) ---
 
     // Handles the request to initiate password reset
     public String handleForgotPassword(String email) {
@@ -65,31 +90,33 @@ public class AuthService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User with this email not found."));
 
-        // Simulate token generation and email sending
-        String resetToken = java.util.UUID.randomUUID().toString(); // Generate a simple token
-        System.out.println("---- PASSWORD RESET ----");
-        System.out.println("Simulating email to: " + email);
-        System.out.println("Reset Token: " + resetToken); // Log the token for testing
-        System.out.println("---- END SIMULATION ----");
+        // Generate token and store it
+        String resetToken = UUID.randomUUID().toString();
+        resetTokens.put(resetToken, new PasswordResetToken(resetToken, email));
 
-        // In a real app, you would save this token linked to the user with an expiry time.
+        // Simulate email sending
+        System.out.println("---- PASSWORD RESET ----");
+        System.out.println("Email to: " + email);
+        System.out.println("Reset Token: " + resetToken);
+        System.out.println("Link: http://localhost:5173/reset-password?token=" + resetToken);
+        System.out.println("---- END SIMULATION ----");
 
         return resetToken; // Return token for simulation purposes
     }
 
     // Handles the actual password reset using the token
     public void resetPassword(String email, String token, String newPassword) {
-        // Find user by email
+        // Validate token
+        PasswordResetToken resetToken = resetTokens.get(token);
+        if (resetToken == null || resetToken.isExpired() || !resetToken.email.equals(email)) {
+            throw new RuntimeException("Invalid or expired reset token.");
+        }
+
+        // Clean up used token
+        resetTokens.remove(token);
+
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found."));
-
-        // --- Simulate Token Validation ---
-        // Replace this with actual token validation against a stored token and expiry
-        if (token == null || token.length() < 10) { // Very basic check for simulation
-             throw new RuntimeException("Invalid or expired reset token.");
-        }
-        System.out.println("Simulating token validation successful for token: " + token);
-        // --- End Simulation ---
 
         // Validate the new password
         if (!isValidPassword(newPassword)) {
@@ -99,6 +126,8 @@ public class AuthService {
         // Update password and save user
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
+        
+        System.out.println("Password reset successful for user: " + email);
     }
 
     // --- Helper Method for Password Validation ---

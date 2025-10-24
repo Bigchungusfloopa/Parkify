@@ -400,6 +400,39 @@ export default function Admin() {
         setSelectedFloorForSlots(floorId);
     };
 
+    // --- Booking Management Functions ---
+    const handleCancelBooking = async (bookingId) => {
+        if (window.confirm('Are you sure you want to cancel this booking?')) {
+            try {
+                await fetch(`http://localhost:8080/api/admin/bookings/${bookingId}/cancel`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                fetchBookings(); // Refresh bookings list
+                alert('Booking cancelled successfully');
+            } catch (error) {
+                console.error('Failed to cancel booking:', error);
+                alert('Failed to cancel booking: ' + error.message);
+            }
+        }
+    };
+
+    const handleDeleteBooking = async (bookingId) => {
+        if (window.confirm('Are you sure you want to delete this booking?')) {
+            try {
+                await fetch(`http://localhost:8080/api/admin/bookings/${bookingId}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                fetchBookings(); // Refresh bookings list
+                alert('Booking deleted successfully');
+            } catch (error) {
+                console.error('Failed to delete booking:', error);
+                alert('Failed to delete booking: ' + error.message);
+            }
+        }
+    };
+
     return (
         <div className="admin-page">
             <div className="background"><Aurora /></div>
@@ -530,11 +563,27 @@ export default function Admin() {
                                             <h4>Booking #{booking.id}</h4>
                                             <p><strong>Vehicle:</strong> {booking.vehicleNumber}</p>
                                             <p><strong>User ID:</strong> {booking.user?.id}</p>
-                                            <p><strong>Time:</strong> {booking.startTime} - {booking.endTime}</p>
+                                            <p><strong>User Name:</strong> {booking.user?.name}</p>
+                                            <p><strong>Time:</strong> {new Date(booking.startTime).toLocaleString()} - {new Date(booking.endTime).toLocaleString()}</p>
                                             <p><strong>Price:</strong> ₹{booking.price}</p>
                                             <span className={`status-badge ${booking.status?.toLowerCase()}`}>
                                                 {booking.status}
                                             </span>
+                                        </div>
+                                        <div className="booking-actions">
+                                            <button 
+                                                className="cancel-btn"
+                                                onClick={() => handleCancelBooking(booking.id)}
+                                                disabled={booking.status === 'CANCELLED' || booking.status === 'COMPLETED'}
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button 
+                                                className="delete-btn"
+                                                onClick={() => handleDeleteBooking(booking.id)}
+                                            >
+                                                Delete
+                                            </button>
                                         </div>
                                     </div>
                                 ))}

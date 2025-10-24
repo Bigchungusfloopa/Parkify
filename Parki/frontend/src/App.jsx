@@ -3,6 +3,9 @@ import Signp from './pages/Signp';
 import Login from './pages/Login';
 import AdminLogin from './pages/AdminLogin'; // Add this
 import Admin from './components/Admin';
+import ForgotPassword from "./pages/ForgotPassword.jsx";
+
+import ResetPassword from './pages/ResetPassword.jsx';
 import Dashboard from './pages/Dashboard';
 import AuthLayout from './pages/AuthLayout';
 import History from './pages/History';
@@ -17,6 +20,9 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/admin-login" element={<AdminLogin />} /> {/* Add this */}
         <Route path="/" element={<Navigate to="/login" />} />
+        // Add the new routes
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
       </Route>
 
       <Route path="/dashboard" element={<Dashboard />} />

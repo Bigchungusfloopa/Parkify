@@ -1,23 +1,39 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Aurora from '../components/Aurora';
+import EditBookingModal from '../components/EditBookingModal';
 import '../styles/History.css';
 
-// HistoryCard component remains the same
-const HistoryCard = ({ booking }) => (
+// Update HistoryCard component
+const HistoryCard = ({ booking, onEdit, onCancel, onDelete }) => (
     <div className="history-card">
         <div className="card-main-info">
             <span className="slot-info">Slot {booking.slotNumber}</span>
             <span className="floor-info">{booking.floorName}</span>
+            <span className={`status-badge ${booking.status?.toLowerCase()}`}>
+                {booking.status}
+            </span>
         </div>
         <div className="card-details">
             <p><strong>Vehicle:</strong> {booking.vehicleNumber}</p>
-            <p><strong>From:</strong> {booking.startTime}</p>
-            <p><strong>To:</strong> {booking.endTime || 'Ongoing'}</p>
+            <p><strong>From:</strong> {new Date(booking.startTime).toLocaleString()}</p>
+            <p><strong>To:</strong> {new Date(booking.endTime).toLocaleString()}</p>
+            <p><strong>Price:</strong> ₹{booking.price?.toFixed(2) || '0.00'}</p>
         </div>
-        <div className="card-footer-info">
-            <span className="price">Price: ₹{booking.price ? booking.price.toFixed(2) : '0.00'}</span>
-            <span className={`status-badge ${booking.status?.toLowerCase()}`}>{booking.status}</span>
+        <div className="card-actions">
+            {booking.status === 'ACTIVE' && (
+                <>
+                    <button className="edit-btn" onClick={() => onEdit(booking)}>
+                        Edit
+                    </button>
+                    <button className="cancel-btn" onClick={() => onCancel(booking.bookingId)}>
+                        Cancel
+                    </button>
+                </>
+            )}
+            <button className="delete-btn" onClick={() => onDelete(booking.bookingId)}>
+                Delete
+            </button>
         </div>
     </div>
 );
@@ -25,47 +41,68 @@ const HistoryCard = ({ booking }) => (
 export default function History() {
     const [bookings, setBookings] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null); // State to handle errors
+    const [error, setError] = useState(null);
+    const [editingBooking, setEditingBooking] = useState(null);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-    useEffect(() => {
-        // --- Get the logged-in user's ID ---
-        const userId = sessionStorage.getItem('userId');
-        
-        if (!userId) {
-            setError("Could not find user ID. Please log in again.");
-            setLoading(false);
-            return; // Stop if no user ID
-        }
-        // --- End Get User ID ---
+    // ... existing fetchHistory function ...
 
-        const fetchHistory = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-        const userId = sessionStorage.getItem('userId');
-        const response = await fetch(`http://localhost:8080/api/bookings/user/${userId}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json'
-                // Remove Authorization header for now
+    const handleEdit = (booking) => {
+        setEditingBooking(booking);
+        setIsEditModalOpen(true);
+    };
+
+    const handleCancel = async (bookingId) => {
+        if (!window.confirm('Are you sure you want to cancel this booking?')) return;
+
+        try {
+            const response = await fetch(`http://localhost:8080/api/bookings/${bookingId}/cancel`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to cancel booking');
             }
-        });
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Failed to fetch history: ${errorText || response.status}`);
-        }
-        const data = await response.json();
-        setBookings(data);
-    } catch (err) {
-        console.error(err);
-        setError(err.message);
-    } finally {
-        setLoading(false);
-    }
-};
 
+            // Refresh the history
+            fetchHistory();
+            alert('Booking cancelled successfully');
+            
+        } catch (err) {
+            console.error('Failed to cancel booking:', err);
+            alert('Failed to cancel booking: ' + err.message);
+        }
+    };
+
+    const handleDelete = async (bookingId) => {
+        if (!window.confirm('Are you sure you want to delete this booking?')) return;
+
+        try {
+            const response = await fetch(`http://localhost:8080/api/bookings/${bookingId}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to delete booking');
+            }
+
+            // Refresh the history
+            fetchHistory();
+            alert('Booking deleted successfully');
+            
+        } catch (err) {
+            console.error('Failed to delete booking:', err);
+            alert('Failed to delete booking: ' + err.message);
+        }
+    };
+
+    const handleUpdateBooking = (updatedBooking) => {
+        // Refresh the history
         fetchHistory();
-    }, []); // Run once on component mount
+        alert('Booking updated successfully');
+    };
 
     return (
         <div className="history-page">
@@ -79,13 +116,31 @@ export default function History() {
                 {error && <p className="history-error">Error: {error}</p>}
                 {!loading && !error && bookings.length > 0 && (
                     <div className="history-list">
-                        {bookings.map(booking => <HistoryCard key={booking.bookingId} booking={booking} />)}
+                        {bookings.map(booking => (
+                            <HistoryCard 
+                                key={booking.bookingId} 
+                                booking={booking}
+                                onEdit={handleEdit}
+                                onCancel={handleCancel}
+                                onDelete={handleDelete}
+                            />
+                        ))}
                     </div>
                 )}
-                 {!loading && !error && bookings.length === 0 && (
+                {!loading && !error && bookings.length === 0 && (
                     <p>You have no past bookings.</p>
                 )}
             </main>
+
+            <EditBookingModal
+                booking={editingBooking}
+                isOpen={isEditModalOpen}
+                onClose={() => {
+                    setIsEditModalOpen(false);
+                    setEditingBooking(null);
+                }}
+                onUpdate={handleUpdateBooking}
+            />
         </div>
     );
 }

@@ -7,6 +7,7 @@ import com.parkify.Park.model.Floor;
 import com.parkify.Park.model.Slot;
 import com.parkify.Park.model.User;
 import com.parkify.Park.service.AdminService;
+import com.parkify.Park.service.BookingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,6 +21,9 @@ public class AdminController {
 
     @Autowired
     private AdminService adminService;
+
+    @Autowired
+    private BookingService bookingService;
 
     // ==================== DASHBOARD ENDPOINTS ====================
 
@@ -90,6 +94,32 @@ public class AdminController {
             return ResponseEntity.ok(bookings);
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();
+        }
+    }
+
+    /**
+     * Cancel any booking (admin)
+     */
+    @PutMapping("/bookings/{bookingId}/cancel")
+    public ResponseEntity<?> adminCancelBooking(@PathVariable Long bookingId) {
+        try {
+            bookingService.cancelBooking(bookingId);
+            return ResponseEntity.ok("Booking cancelled successfully");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    /**
+     * Delete any booking (admin)
+     */
+    @DeleteMapping("/bookings/{bookingId}")
+    public ResponseEntity<?> adminDeleteBooking(@PathVariable Long bookingId) {
+        try {
+            bookingService.deleteBooking(bookingId);
+            return ResponseEntity.ok("Booking deleted successfully");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 

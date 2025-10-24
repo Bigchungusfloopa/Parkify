@@ -36,4 +36,41 @@ public class BookingController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+
+
+    // Add these endpoints to BookingController.java
+
+// Update booking
+@PutMapping("/{bookingId}")
+public ResponseEntity<?> updateBooking(@PathVariable Long bookingId, @RequestBody BookingRequestDto bookingRequest) {
+    try {
+        Booking updatedBooking = bookingService.updateBooking(bookingId, bookingRequest);
+        return ResponseEntity.ok(updatedBooking);
+    } catch (Exception e) {
+        return ResponseEntity.badRequest().body(e.getMessage());
+    }
+}
+
+// Cancel booking
+@PutMapping("/{bookingId}/cancel")
+public ResponseEntity<?> cancelBooking(@PathVariable Long bookingId) {
+    try {
+        bookingService.cancelBooking(bookingId);
+        return ResponseEntity.ok("Booking cancelled successfully");
+    } catch (Exception e) {
+        return ResponseEntity.badRequest().body(e.getMessage());
+    }
+}
+
+// Delete booking (admin only)
+@DeleteMapping("/{bookingId}")
+public ResponseEntity<?> deleteBooking(@PathVariable Long bookingId) {
+    try {
+        bookingService.deleteBooking(bookingId);
+        return ResponseEntity.ok("Booking deleted successfully");
+    } catch (Exception e) {
+        return ResponseEntity.badRequest().body(e.getMessage());
+    }
+}
 }

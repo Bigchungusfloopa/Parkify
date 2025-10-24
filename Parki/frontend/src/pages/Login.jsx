@@ -81,15 +81,18 @@ export default function Login() {
                     {isAdminLogin ? 'Login as Admin' : 'Login'}
                 </button>
                 
+
+                {/* Add this new section */}
+                <div className="auth-link">
+                    <Link to="/forgot-password">Forgot your password?</Link>
+                </div>
+                
                 <div className="auth-link">
                     <span>Don't have an account? </span>
                     <Link to="/signup">Sign Up</Link>
                 </div>
 
-                {/* Admin Access Info */}
-                <div className="admin-access-info">
-                    <p><strong>Admin Access:</strong> Use admin credentials to access admin panel</p>
-                </div>
+            
             </form>
         </div>
     );
