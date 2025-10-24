@@ -265,7 +265,7 @@ export default function ReservationModal({ slot, onConfirm, onCancel, onBookingC
                 {step === 1 && (
                     <>
                         <h2>Slot {slot.slotNumber} - Reservations</h2>
-                        <p className="modal-subtitle">No current reservations for this slot.</p>
+                    
                         <div className="modal-actions">
                             <button onClick={handleCancel} className="btn-secondary">Close</button>
                             <button onClick={handleReserveClick} className="btn-primary">Reserve</button>

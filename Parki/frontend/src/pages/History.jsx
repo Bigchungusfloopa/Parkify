@@ -4,7 +4,6 @@ import Aurora from '../components/Aurora';
 import EditBookingModal from '../components/EditBookingModal';
 import '../styles/History.css';
 
-// Update HistoryCard component
 const HistoryCard = ({ booking, onEdit, onCancel, onDelete }) => (
     <div className="history-card">
         <div className="card-main-info">
@@ -45,7 +44,47 @@ export default function History() {
     const [editingBooking, setEditingBooking] = useState(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-    // ... existing fetchHistory function ...
+    // FIXED: Added the fetchHistory function implementation
+    const fetchHistory = async () => {
+        setLoading(true);
+        setError(null);
+        
+        try {
+            const userId = sessionStorage.getItem('userId');
+            
+            if (!userId) {
+                throw new Error('User ID not found. Please log in again.');
+            }
+
+            console.log('Fetching history for userId:', userId);
+
+            const response = await fetch(`http://localhost:8080/api/bookings/user/${userId}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to fetch booking history: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log('Received booking history:', data);
+            setBookings(data);
+            
+        } catch (err) {
+            console.error('Error fetching history:', err);
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // FIXED: Added useEffect to call fetchHistory on component mount
+    useEffect(() => {
+        fetchHistory();
+    }, []); // Empty dependency array means this runs once when component mounts
 
     const handleEdit = (booking) => {
         setEditingBooking(booking);
