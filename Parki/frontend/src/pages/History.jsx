@@ -39,24 +39,30 @@ export default function History() {
         // --- End Get User ID ---
 
         const fetchHistory = async () => {
-            setLoading(true);
-            setError(null); // Clear previous errors
-            try {
-                // --- Use the retrieved userId in the API call ---
-                const response = await fetch(`http://localhost:8080/api/bookings/user/${userId}`);
-                if (!response.ok) {
-                     const errorText = await response.text();
-                     throw new Error(`Failed to fetch history: ${errorText || response.status}`);
-                }
-                const data = await response.json();
-                setBookings(data);
-            } catch (err) {
-                console.error(err);
-                setError(err.message); // Set error state
-            } finally {
-                setLoading(false);
+    setLoading(true);
+    setError(null);
+    try {
+        const userId = sessionStorage.getItem('userId');
+        const response = await fetch(`http://localhost:8080/api/bookings/user/${userId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+                // Remove Authorization header for now
             }
-        };
+        });
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Failed to fetch history: ${errorText || response.status}`);
+        }
+        const data = await response.json();
+        setBookings(data);
+    } catch (err) {
+        console.error(err);
+        setError(err.message);
+    } finally {
+        setLoading(false);
+    }
+};
 
         fetchHistory();
     }, []); // Run once on component mount

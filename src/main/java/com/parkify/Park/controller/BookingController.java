@@ -1,12 +1,12 @@
 package com.parkify.Park.controller;
 
 import com.parkify.Park.dto.BookingRequestDto;
+import com.parkify.Park.dto.BookingHistoryDto;
 import com.parkify.Park.model.Booking;
 import com.parkify.Park.service.BookingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import com.parkify.Park.dto.BookingHistoryDto; // Import the new DTO
 import java.util.List;
 
 @RestController
@@ -15,11 +15,17 @@ public class BookingController {
 
     @Autowired
     private BookingService bookingService;
+
+    // Fix the booking history endpoint
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<BookingHistoryDto>> getHistory(@PathVariable Long userId) {
-        List<BookingHistoryDto> history = bookingService.getBookingHistoryForUser(userId);
-        return ResponseEntity.ok(history);
-    }   
+    public ResponseEntity<List<BookingHistoryDto>> getBookingHistory(@PathVariable Long userId) {
+        try {
+            List<BookingHistoryDto> history = bookingService.getBookingHistoryForUser(userId);
+            return ResponseEntity.ok(history);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(null);
+        }
+    }
 
     @PostMapping
     public ResponseEntity<?> createBooking(@RequestBody BookingRequestDto bookingRequest) {
@@ -30,4 +36,4 @@ public class BookingController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
-}   
+}

@@ -2,21 +2,32 @@ package com.parkify.Park.repositories;
 
 import com.parkify.Park.model.Booking;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query; // Import Query
-import org.springframework.data.repository.query.Param; // Import Param
-import java.time.LocalDateTime; // Import LocalDateTime
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import java.util.List;
-import java.util.Optional;
 
 public interface BookingRepository extends JpaRepository<Booking, Long> {
-
-    Optional<Booking> findBySlotIdAndStatus(Long slotId, String status);
-
+    
+    // Existing methods
     List<Booking> findByUserIdOrderByStartTimeDesc(Long userId);
-
-    List<Booking> findAllBySlotId(Long slotId); // Needed for SlotService update
-
-    // Finds any booking for a slot that overlaps with the requested time range.
-    @Query("SELECT b FROM Booking b WHERE b.slot.id = :slotId AND b.startTime < :endTime AND b.endTime > :startTime")
-    List<Booking> findConflictingBookings(@Param("slotId") Long slotId, @Param("startTime") LocalDateTime startTime, @Param("endTime") LocalDateTime endTime);
+    
+    // FIXED: Add @Query annotation for the complex method
+    @Query("SELECT b FROM Booking b WHERE b.slot.id = :slotId AND " +
+           "((b.startTime BETWEEN :startTime AND :endTime) OR " +
+           "(b.endTime BETWEEN :startTime AND :endTime) OR " +
+           "(b.startTime <= :startTime AND b.endTime >= :endTime))")
+    List<Booking> findConflictingBookings(@Param("slotId") Long slotId, 
+                                         @Param("startTime") java.time.LocalDateTime startTime, 
+                                         @Param("endTime") java.time.LocalDateTime endTime);
+    
+    // New methods for admin
+    long countByStatus(String status);
+    
+    @Query("SELECT SUM(b.price) FROM Booking b WHERE b.status = :status")
+    Double sumPriceByStatus(String status);
+    
+    List<Booking> findAllByOrderByStartTimeDesc();
+    
+    // ADD THIS METHOD to fix the redline error in SlotService
+    List<Booking> findBySlotId(Long slotId);
 }

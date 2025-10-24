@@ -1,14 +1,13 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
-export default function Login() {
+export default function AdminLogin() {
     const navigate = useNavigate();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState(null);
-    const [isAdminLogin, setIsAdminLogin] = useState(false);
 
-    const handleLogin = async (e) => {
+    const handleAdminLogin = async (e) => {
         e.preventDefault();
         setError(null);
         try {
@@ -27,16 +26,10 @@ export default function Login() {
             const userId = data.userId || data.id;
             if (userId) {
                 sessionStorage.setItem('userId', userId.toString());
-            } else {
-                throw new Error("Login successful, but user ID was missing.");
             }
 
-            // Check if user has admin role and redirect accordingly
-            if (data.role === 'ROLE_ADMIN' || isAdminLogin) {
-                navigate('/admin');
-            } else {
-                navigate('/dashboard');
-            }
+            // Always redirect to admin panel for admin login
+            navigate('/admin');
 
         } catch (err) {
             setError(err.message);
@@ -46,12 +39,12 @@ export default function Login() {
     return (
         <div className="auth-container">
             <h1 className="logo-text">Parkify</h1>
-            <form className="auth-form" onSubmit={handleLogin}>
-                <h2>Welcome Back!</h2>
+            <form className="auth-form" onSubmit={handleAdminLogin}>
+                <h2>Admin Login</h2>
                 {error && <p className="error-message">{error}</p>}
                 
                 <div className="input-group">
-                    <label htmlFor="email">Email</label>
+                    <label htmlFor="email">Admin Email</label>
                     <input
                         type="email" id="email" value={email}
                         onChange={(e) => setEmail(e.target.value)} required autoComplete="email"
@@ -64,31 +57,14 @@ export default function Login() {
                         onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password"
                     />
                 </div>
-                
-                {/* Admin Login Toggle */}
-                <div className="admin-toggle">
-                    <label>
-                        <input
-                            type="checkbox"
-                            checked={isAdminLogin}
-                            onChange={(e) => setIsAdminLogin(e.target.checked)}
-                        />
-                        Admin Login
-                    </label>
-                </div>
 
-                <button type="submit" className="auth-button">
-                    {isAdminLogin ? 'Login as Admin' : 'Login'}
+                <button type="submit" className="auth-button admin-login-btn">
+                    Login as Admin
                 </button>
                 
                 <div className="auth-link">
-                    <span>Don't have an account? </span>
-                    <Link to="/signup">Sign Up</Link>
-                </div>
-
-                {/* Admin Access Info */}
-                <div className="admin-access-info">
-                    <p><strong>Admin Access:</strong> Use admin credentials to access admin panel</p>
+                    <span>Regular user? </span>
+                    <Link to="/login">User Login</Link>
                 </div>
             </form>
         </div>

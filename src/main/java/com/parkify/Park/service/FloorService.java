@@ -1,6 +1,5 @@
 package com.parkify.Park.service;
 
-// No FloorDto import needed here
 import com.parkify.Park.dto.FloorRequestDto;
 import com.parkify.Park.model.Floor;
 import com.parkify.Park.repositories.FloorRepository;
@@ -10,7 +9,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
-// No Collectors import needed here
 
 @Service
 public class FloorService {
@@ -19,21 +17,25 @@ public class FloorService {
     private FloorRepository floorRepository;
 
     @Autowired
-    private SlotRepository slotRepository; // Ensure this is imported and autowired
+    private SlotRepository slotRepository;
 
-    // Change return type back to List<Floor> and calculate vacancy
+    // Get all floors with vacancy calculation (for public)
     @Transactional(readOnly = true)
     public List<Floor> getAllFloorsWithVacancy() {
         List<Floor> floors = floorRepository.findAll();
-        // Calculate and set availableSlots for each floor
         floors.forEach(floor -> {
             long availableCount = slotRepository.countByFloorIdAndIsOccupied(floor.getId(), false);
-            floor.setAvailableSlots(availableCount); // Set the transient field
+            floor.setAvailableSlots(availableCount);
         });
         return floors;
     }
 
-    // Keep other methods as they were
+    // Get all floors without vacancy calculation (for admin)
+    @Transactional(readOnly = true)
+    public List<Floor> getAllFloors() {
+        return floorRepository.findAll();
+    }
+
     public Optional<Floor> getFloorById(Long id) {
         return floorRepository.findById(id);
     }

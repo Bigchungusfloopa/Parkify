@@ -1,6 +1,5 @@
 package com.parkify.Park.controller;
 
-// No FloorDto import needed here
 import com.parkify.Park.dto.FloorRequestDto;
 import com.parkify.Park.model.Floor;
 import com.parkify.Park.service.FloorService;
@@ -17,13 +16,13 @@ public class FloorController {
     @Autowired
     private FloorService floorService;
 
-    // Change return type back to List<Floor>
+    // Get all floors (public)
     @GetMapping
     public List<Floor> getAllFloors() {
-        return floorService.getAllFloorsWithVacancy(); // Call the updated service method
+        return floorService.getAllFloorsWithVacancy();
     }
 
-    // Keep other endpoints as they were
+    // Get floor by ID (public)
     @GetMapping("/{id}")
     public ResponseEntity<Floor> getFloorById(@PathVariable Long id) {
         return floorService.getFloorById(id)
@@ -31,12 +30,14 @@ public class FloorController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    // Create floor (admin only)
     @PostMapping
     public ResponseEntity<Floor> createFloor(@RequestBody FloorRequestDto floorDto) {
         Floor createdFloor = floorService.createFloor(floorDto);
         return new ResponseEntity<>(createdFloor, HttpStatus.CREATED);
     }
 
+    // Update floor (admin only)
     @PutMapping("/{id}")
     public ResponseEntity<Floor> updateFloor(@PathVariable Long id, @RequestBody FloorRequestDto floorDto) {
         try {
@@ -47,6 +48,7 @@ public class FloorController {
         }
     }
 
+    // Delete floor (admin only)
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteFloor(@PathVariable Long id) {
         try {
@@ -54,6 +56,17 @@ public class FloorController {
             return ResponseEntity.noContent().build();
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
+        }
+    }
+
+    // Get all floors for admin (includes all data)
+    @GetMapping("/admin/all")
+    public ResponseEntity<List<Floor>> getAllFloorsForAdmin() {
+        try {
+            List<Floor> floors = floorService.getAllFloors();
+            return ResponseEntity.ok(floors);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
         }
     }
 }

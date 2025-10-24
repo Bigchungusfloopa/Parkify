@@ -7,15 +7,16 @@ import java.time.LocalDateTime;
 @Data
 public class BookingHistoryDto {
     private Long bookingId;
-    private String slotNumber;
-    private String floorName;
     private String vehicleNumber;
-    private String status;
     private Double price;
-
-    @JsonFormat(pattern="yyyy-MM-dd, HH:mm")
+    
+    @JsonFormat(pattern="yyyy-MM-dd HH:mm")
     private LocalDateTime startTime;
     
-    @JsonFormat(pattern="yyyy-MM-dd, HH:mm")
+    @JsonFormat(pattern="yyyy-MM-dd HH:mm")
     private LocalDateTime endTime;
+    
+    private String status;
+    private String slotNumber;
+    private String floorName;
 }

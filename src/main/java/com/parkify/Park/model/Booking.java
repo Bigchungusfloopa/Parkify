@@ -6,7 +6,7 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-@Entity // Keep these annotations ABOVE the class
+@Entity
 @Table(name = "bookings")
 public class Booking {
 
@@ -15,15 +15,13 @@ public class Booking {
     private Long id;
 
     private String vehicleNumber;
+    private Double price;
 
-    // Remove the duplicate annotations from here
-
-    private Double price; // Keep this field
-
-    @JsonFormat(pattern="yyyy-MM-dd, HH:mm")
+    // FIXED: Updated date format to match frontend
+    @JsonFormat(pattern="yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime startTime;
 
-    @JsonFormat(pattern="yyyy-MM-dd, HH:mm")
+    @JsonFormat(pattern="yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime endTime;
     
     private String status;

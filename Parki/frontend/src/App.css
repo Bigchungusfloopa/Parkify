@@ -136,3 +136,59 @@
     font-size: 0.9rem;
     cursor: pointer;
 }
+
+/* Admin Login Styles */
+.admin-toggle {
+    margin: 1rem 0;
+    display: flex;
+    align-items: center;
+}
+
+.admin-toggle label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+}
+
+.admin-toggle input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+}
+
+.admin-login-btn {
+    background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+}
+
+.admin-login-btn:hover {
+    background: linear-gradient(45deg, #ff5252, #e84118);
+}
+
+.admin-access-info {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    border-left: 4px solid #ff6b6b;
+}
+
+.admin-access-info p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.admin-link {
+    margin-top: 1rem;
+    text-align: center;
+}
+
+.admin-link a {
+    color: #ff6b6b;
+    text-decoration: none;
+}
+
+.admin-link a:hover {
+    text-decoration: underline;
+}

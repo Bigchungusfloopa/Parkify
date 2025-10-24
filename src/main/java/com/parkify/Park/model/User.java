@@ -19,6 +19,6 @@ public class User {
     @Column(nullable = false)
     private String password;
 
-    // --- Ensure this field exists ---
-    private String role; // e.g., "ROLE_USER"
+    // Make sure default role is set
+    private String role = "ROLE_USER"; // Default role
 }

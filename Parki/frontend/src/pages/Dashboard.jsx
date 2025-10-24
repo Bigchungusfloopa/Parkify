@@ -72,25 +72,31 @@ export default function Dashboard() {
 
     // Fetch recent bookings using the provided user ID
     const fetchRecentBookings = async (currentUserId) => {
-        console.log("Dashboard attempting to fetch recent bookings for userId:", currentUserId);
+    console.log("Dashboard attempting to fetch recent bookings for userId:", currentUserId);
 
-        if (!currentUserId) {
-            console.log("Dashboard: No userId provided, skipping fetch.");
-            return;
-        }
-        try {
-            const response = await fetch(`http://localhost:8080/api/bookings/user/${currentUserId}`);
-            if (!response.ok) {
-                throw new Error(`Failed to fetch recent bookings: ${response.status}`);
+    if (!currentUserId) {
+        console.log("Dashboard: No userId provided, skipping fetch.");
+        return;
+    }
+    try {
+        const response = await fetch(`http://localhost:8080/api/bookings/user/${currentUserId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+                // Remove Authorization header for now
             }
-            const data = await response.json();
-            console.log("Dashboard received recent bookings:", data);
-            setRecentBookings(data.slice(0, 3)); // Get latest 3
-        } catch (error) {
-            console.error("Failed to fetch recent bookings:", error);
-            setRecentBookings([]); // Clear bookings on error
+        });
+        if (!response.ok) {
+            throw new Error(`Failed to fetch recent bookings: ${response.status}`);
         }
-    };
+        const data = await response.json();
+        console.log("Dashboard received recent bookings:", data);
+        setRecentBookings(data.slice(0, 3));
+    } catch (error) {
+        console.error("Failed to fetch recent bookings:", error);
+        setRecentBookings([]);
+    }
+};
 
     // Logout handler
     const handleLogout = () => {

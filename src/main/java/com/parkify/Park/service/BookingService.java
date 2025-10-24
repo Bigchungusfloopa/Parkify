@@ -12,7 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.Duration;
-import java.time.LocalDateTime; // Ensure LocalDateTime is imported
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -67,8 +67,7 @@ public class BookingService {
         // Calculate the price
         double calculatedPrice = calculateBookingPrice(slot, bookingRequest.getStartTime(), bookingRequest.getEndTime());
 
-        // Update slot status (for UI purposes, actual availability check is done above)
-        // Consider setting this based on whether startTime is now or in the future
+        // Update slot status
         slot.setOccupied(true);
         slotRepository.save(slot);
 
@@ -76,13 +75,13 @@ public class BookingService {
         Booking booking = new Booking();
         booking.setSlot(slot);
         booking.setUser(user);
-        booking.setVehicleNumber(bookingRequest.getVehicleNumber().toUpperCase().replaceAll("[- ]", "")); // Standardize format
+        booking.setVehicleNumber(bookingRequest.getVehicleNumber().toUpperCase().replaceAll("[- ]", ""));
         booking.setStartTime(bookingRequest.getStartTime());
         booking.setEndTime(bookingRequest.getEndTime());
-        booking.setStatus("ACTIVE"); // Set initial status
+        booking.setStatus("ACTIVE");
         booking.setPrice(calculatedPrice);
 
-        return bookingRepository.save(booking); // Save and return the new booking
+        return bookingRepository.save(booking);
     }
 
     // --- Get Booking History Method ---
@@ -90,7 +89,7 @@ public class BookingService {
     public List<BookingHistoryDto> getBookingHistoryForUser(Long userId) {
         // Fetch bookings for the user, ordered by start time descending
         List<Booking> bookings = bookingRepository.findByUserIdOrderByStartTimeDesc(userId);
-        LocalDateTime now = LocalDateTime.now(); // Get current time once for comparison
+        LocalDateTime now = LocalDateTime.now();
 
         // Convert Booking entities to BookingHistoryDto objects
         return bookings.stream().map(booking -> {
@@ -101,11 +100,13 @@ public class BookingService {
             dto.setStartTime(booking.getStartTime());
             dto.setEndTime(booking.getEndTime());
 
-            // Determine status: "COMPLETED" if endTime is in the past, otherwise use DB status
+            // FIXED: Better status calculation
             if (booking.getEndTime() != null && booking.getEndTime().isBefore(now)) {
                 dto.setStatus("COMPLETED");
+            } else if (booking.getStartTime() != null && booking.getStartTime().isAfter(now)) {
+                dto.setStatus("UPCOMING");
             } else {
-                dto.setStatus(booking.getStatus()); // e.g., "ACTIVE" or potentially "RESERVED"
+                dto.setStatus(booking.getStatus() != null ? booking.getStatus() : "ACTIVE");
             }
 
             // Safely add related slot and floor information
@@ -138,7 +139,7 @@ public class BookingService {
         double durationHours = Math.max(1.0, Math.ceil(durationMinutes / 60.0));
 
         double hourlyRate = BASE_RATE_PER_HOUR;
-        String slotType = slot.getType(); // Get type once for efficiency
+        String slotType = slot.getType();
 
         // Add surcharges based on slot type
         if (slotType != null && (slotType.equals("EV") || slotType.equals("Two-Wheeler-EV"))) {
