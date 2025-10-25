@@ -41,9 +41,36 @@ public class BookingService {
     @Autowired
     private BookingRepository bookingRepository;
 
+    // --- FIXED: Update expired bookings and slot statuses ---
+    @Transactional
+    public void updateExpiredBookings() {
+        LocalDateTime now = LocalDateTime.now();
+        
+        // Get all active bookings
+        List<Booking> activeBookings = bookingRepository.findByStatus("ACTIVE");
+        
+        for (Booking booking : activeBookings) {
+            // If booking has ended, mark it as completed and free the slot
+            if (booking.getEndTime() != null && booking.getEndTime().isBefore(now)) {
+                booking.setStatus("COMPLETED");
+                bookingRepository.save(booking);
+                
+                // Free up the slot
+                Slot slot = booking.getSlot();
+                if (slot != null) {
+                    slot.setOccupied(false);
+                    slotRepository.save(slot);
+                }
+            }
+        }
+    }
+
     // --- Create Booking Method ---
     @Transactional
     public Booking createBooking(BookingRequestDto bookingRequest) {
+        // FIRST: Update expired bookings to ensure accurate slot availability
+        updateExpiredBookings();
+        
         // Validate vehicle number
         if (!isValidVehicleNumber(bookingRequest.getVehicleNumber())) {
             throw new RuntimeException("Invalid vehicle number format.");
@@ -71,26 +98,35 @@ public class BookingService {
         // Calculate the price
         double calculatedPrice = calculateBookingPrice(slot, bookingRequest.getStartTime(), bookingRequest.getEndTime());
 
-        // Update slot status (for UI purposes, actual availability check is done above)
-        slot.setOccupied(true);
-        slotRepository.save(slot);
+        // FIXED: Only mark slot as occupied if the booking starts NOW or in the past
+        LocalDateTime now = LocalDateTime.now();
+        boolean shouldOccupyNow = bookingRequest.getStartTime().isBefore(now) || 
+                                  bookingRequest.getStartTime().isEqual(now);
+        
+        if (shouldOccupyNow) {
+            slot.setOccupied(true);
+            slotRepository.save(slot);
+        }
 
         // Create the new booking record
         Booking booking = new Booking();
         booking.setSlot(slot);
         booking.setUser(user);
-        booking.setVehicleNumber(bookingRequest.getVehicleNumber().toUpperCase().replaceAll("[- ]", "")); // Standardize format
+        booking.setVehicleNumber(bookingRequest.getVehicleNumber().toUpperCase().replaceAll("[- ]", ""));
         booking.setStartTime(bookingRequest.getStartTime());
         booking.setEndTime(bookingRequest.getEndTime());
-        booking.setStatus("ACTIVE"); // Set initial status
+        booking.setStatus("ACTIVE");
         booking.setPrice(calculatedPrice);
 
-        return bookingRepository.save(booking); // Save and return the new booking
+        return bookingRepository.save(booking);
     }
 
     // --- Update Booking Method ---
     @Transactional
     public Booking updateBooking(Long bookingId, BookingRequestDto bookingRequest) {
+        // Update expired bookings first
+        updateExpiredBookings();
+        
         Booking existingBooking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking not found with id: " + bookingId));
 
@@ -135,8 +171,10 @@ public class BookingService {
 
         // Free up the slot
         Slot slot = booking.getSlot();
-        slot.setOccupied(false);
-        slotRepository.save(slot);
+        if (slot != null) {
+            slot.setOccupied(false);
+            slotRepository.save(slot);
+        }
 
         // Update booking status
         booking.setStatus("CANCELLED");
@@ -146,9 +184,18 @@ public class BookingService {
     // --- Delete Booking Permanently (Admin Only) ---
     @Transactional
     public void deleteBooking(Long bookingId) {
-        if (!bookingRepository.existsById(bookingId)) {
-            throw new RuntimeException("Booking not found with id: " + bookingId);
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Booking not found with id: " + bookingId));
+        
+        // If the booking was active, free up the slot
+        if ("ACTIVE".equals(booking.getStatus())) {
+            Slot slot = booking.getSlot();
+            if (slot != null) {
+                slot.setOccupied(false);
+                slotRepository.save(slot);
+            }
         }
+        
         bookingRepository.deleteById(bookingId);
     }
 
@@ -157,7 +204,7 @@ public class BookingService {
     public List<BookingHistoryDto> getBookingHistoryForUser(Long userId) {
         // Fetch bookings for the user, ordered by start time descending
         List<Booking> bookings = bookingRepository.findByUserIdOrderByStartTimeDesc(userId);
-        LocalDateTime now = LocalDateTime.now(); // Get current time once for comparison
+        LocalDateTime now = LocalDateTime.now();
 
         // Convert Booking entities to BookingHistoryDto objects
         return bookings.stream().map(booking -> {
@@ -203,20 +250,18 @@ public class BookingService {
         }
 
         long durationMinutes = Duration.between(startTime, endTime).toMinutes();
-        // Calculate hours: minimum 1 hour, round fractions up
         double durationHours = Math.max(1.0, Math.ceil(durationMinutes / 60.0));
 
         double hourlyRate = BASE_RATE_PER_HOUR;
-        String slotType = slot.getType(); // Get type once for efficiency
+        String slotType = slot.getType();
 
-        // Add surcharges based on slot type
         if (slotType != null) {
             if (slotType.equals("EV") || slotType.equals("Two-Wheeler-EV")) {
                 hourlyRate += EV_SURCHARGE;
             } else if (slotType.equals("VIP")) {
                 hourlyRate += VIP_SURCHARGE;
             } else if (slotType.equals("Handicap")) {
-                hourlyRate += HANDICAP_SURCHARGE; // Handicap slots are usually free or same price
+                hourlyRate += HANDICAP_SURCHARGE;
             }
         }
 

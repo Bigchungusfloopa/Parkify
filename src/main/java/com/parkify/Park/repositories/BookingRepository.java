@@ -13,7 +13,6 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     // Existing methods
     List<Booking> findByUserIdOrderByStartTimeDesc(Long userId);
     
-    // FIXED: Add @Query annotation for the complex method
     @Query("SELECT b FROM Booking b WHERE b.slot.id = :slotId AND " +
            "((b.startTime BETWEEN :startTime AND :endTime) OR " +
            "(b.endTime BETWEEN :startTime AND :endTime) OR " +
@@ -22,10 +21,11 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                                          @Param("startTime") java.time.LocalDateTime startTime, 
                                          @Param("endTime") java.time.LocalDateTime endTime);
     
-    // New methods for admin
+    // ADDED: Find bookings by status
+    List<Booking> findByStatus(String status);
+    
     long countByStatus(String status);
 
-    // Add this method to BookingRepository.java
     @Query("SELECT b FROM Booking b WHERE b.slot.id = :slotId AND " +
        "((b.startTime BETWEEN :startTime AND :endTime) OR " +
        "(b.endTime BETWEEN :startTime AND :endTime) OR " +
@@ -41,6 +41,5 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     
     List<Booking> findAllByOrderByStartTimeDesc();
     
-    // ADD THIS METHOD to fix the redline error in SlotService
     List<Booking> findBySlotId(Long slotId);
 }

@@ -16,12 +16,11 @@ public class Slot {
     private String type;
     private boolean isOccupied;
 
-    @OneToOne(mappedBy = "slot", fetch = FetchType.LAZY)
-    private Booking activeBooking;
+    // REMOVED: The OneToOne activeBooking relationship that was causing issues
+    // We'll fetch active bookings through the BookingRepository instead
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "floor_id")
     @JsonIgnore
     private Floor floor;
 }
-

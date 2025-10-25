@@ -124,10 +124,10 @@ const SlotModal = ({ isOpen, onClose, slot, floors, onSave }) => {
                         <label>Slot Type</label>
                         <select value={type} onChange={(e) => setType(e.target.value)}>
                             <option value="Regular">Regular</option>
+                            <option value="Two-Wheeler">Two-Wheeler</option>
                             <option value="EV">EV Charging</option>
                             <option value="Two-Wheeler-EV">Two-Wheeler EV</option>
                             <option value="VIP">VIP</option>
-                            <option value="Handicap">Handicap</option>
                         </select>
                     </div>
                     <div className="form-group">
@@ -167,7 +167,6 @@ export default function Admin() {
     const [stats, setStats] = useState({});
     const [activeTab, setActiveTab] = useState('dashboard');
     const [users, setUsers] = useState([]);
-    const [bookings, setBookings] = useState([]);
     const [floors, setFloors] = useState([]);
     const [slots, setSlots] = useState([]);
     const [isFloorModalOpen, setIsFloorModalOpen] = useState(false);
@@ -182,8 +181,6 @@ export default function Admin() {
             fetchDashboardStats();
         } else if (activeTab === 'users') {
             fetchUsers();
-        } else if (activeTab === 'bookings') {
-            fetchBookings();
         } else if (activeTab === 'floors') {
             fetchFloors();
         } else if (activeTab === 'slots') {
@@ -195,6 +192,8 @@ export default function Admin() {
     useEffect(() => {
         if (selectedFloorForSlots && activeTab === 'slots') {
             fetchSlotsByFloor(selectedFloorForSlots);
+        } else if (activeTab === 'slots' && !selectedFloorForSlots) {
+            fetchSlots(); // Show all slots when no floor is selected
         }
     }, [selectedFloorForSlots, activeTab]);
 
@@ -218,20 +217,11 @@ export default function Admin() {
         }
     };
 
-    const fetchBookings = async () => {
-        try {
-            const response = await fetch('http://localhost:8080/api/admin/bookings');
-            const data = await response.json();
-            setBookings(data);
-        } catch (error) {
-            console.error('Failed to fetch bookings:', error);
-        }
-    };
-
     const fetchFloors = async () => {
         try {
             const response = await fetch('http://localhost:8080/api/admin/floors');
             const data = await response.json();
+            console.log('Fetched floors:', data); // Debug log
             setFloors(data);
         } catch (error) {
             console.error('Failed to fetch floors:', error);
@@ -242,6 +232,7 @@ export default function Admin() {
         try {
             const response = await fetch('http://localhost:8080/api/admin/slots');
             const data = await response.json();
+            console.log('Fetched all slots:', data); // Debug log
             setSlots(data);
         } catch (error) {
             console.error('Failed to fetch slots:', error);
@@ -252,6 +243,7 @@ export default function Admin() {
         try {
             const response = await fetch(`http://localhost:8080/api/admin/floors/${floorId}/slots`);
             const data = await response.json();
+            console.log(`Fetched slots for floor ${floorId}:`, data); // Debug log
             setSlots(data);
         } catch (error) {
             console.error('Failed to fetch slots by floor:', error);
@@ -315,6 +307,8 @@ export default function Admin() {
 
     const handleSaveSlot = async (slotData) => {
         try {
+            console.log('Saving slot with data:', slotData); // Debug log
+            
             if (editingSlot) {
                 await fetch(`http://localhost:8080/api/admin/slots/${editingSlot.id}`, {
                     method: 'PUT',
@@ -330,6 +324,8 @@ export default function Admin() {
             }
             setIsSlotModalOpen(false);
             setEditingSlot(null);
+            
+            // Refresh slots after save
             if (selectedFloorForSlots) {
                 fetchSlotsByFloor(selectedFloorForSlots);
             } else {
@@ -400,39 +396,6 @@ export default function Admin() {
         setSelectedFloorForSlots(floorId);
     };
 
-    // --- Booking Management Functions ---
-    const handleCancelBooking = async (bookingId) => {
-        if (window.confirm('Are you sure you want to cancel this booking?')) {
-            try {
-                await fetch(`http://localhost:8080/api/admin/bookings/${bookingId}/cancel`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                fetchBookings(); // Refresh bookings list
-                alert('Booking cancelled successfully');
-            } catch (error) {
-                console.error('Failed to cancel booking:', error);
-                alert('Failed to cancel booking: ' + error.message);
-            }
-        }
-    };
-
-    const handleDeleteBooking = async (bookingId) => {
-        if (window.confirm('Are you sure you want to delete this booking?')) {
-            try {
-                await fetch(`http://localhost:8080/api/admin/bookings/${bookingId}`, {
-                    method: 'DELETE',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                fetchBookings(); // Refresh bookings list
-                alert('Booking deleted successfully');
-            } catch (error) {
-                console.error('Failed to delete booking:', error);
-                alert('Failed to delete booking: ' + error.message);
-            }
-        }
-    };
-
     return (
         <div className="admin-page">
             <div className="background"><Aurora /></div>
@@ -459,12 +422,6 @@ export default function Admin() {
                         onClick={() => setActiveTab('users')}
                     >
                         👥 Users
-                    </button>
-                    <button 
-                        className={`sidebar-tab ${activeTab === 'bookings' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('bookings')}
-                    >
-                        📋 Bookings
                     </button>
                     <button 
                         className={`sidebar-tab ${activeTab === 'floors' ? 'active' : ''}`}
@@ -553,44 +510,6 @@ export default function Admin() {
                         </div>
                     )}
 
-                    {activeTab === 'bookings' && (
-                        <div className="bookings-tab">
-                            <h2>All Bookings</h2>
-                            <div className="bookings-list">
-                                {bookings.map(booking => (
-                                    <div key={booking.id} className="booking-card">
-                                        <div className="booking-info">
-                                            <h4>Booking #{booking.id}</h4>
-                                            <p><strong>Vehicle:</strong> {booking.vehicleNumber}</p>
-                                            <p><strong>User ID:</strong> {booking.user?.id}</p>
-                                            <p><strong>User Name:</strong> {booking.user?.name}</p>
-                                            <p><strong>Time:</strong> {new Date(booking.startTime).toLocaleString()} - {new Date(booking.endTime).toLocaleString()}</p>
-                                            <p><strong>Price:</strong> ₹{booking.price}</p>
-                                            <span className={`status-badge ${booking.status?.toLowerCase()}`}>
-                                                {booking.status}
-                                            </span>
-                                        </div>
-                                        <div className="booking-actions">
-                                            <button 
-                                                className="cancel-btn"
-                                                onClick={() => handleCancelBooking(booking.id)}
-                                                disabled={booking.status === 'CANCELLED' || booking.status === 'COMPLETED'}
-                                            >
-                                                Cancel
-                                            </button>
-                                            <button 
-                                                className="delete-btn"
-                                                onClick={() => handleDeleteBooking(booking.id)}
-                                            >
-                                                Delete
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
                     {activeTab === 'floors' && (
                         <div className="floors-tab">
                             <div className="floors-header">
@@ -607,7 +526,6 @@ export default function Admin() {
                                             <p>{floor.details || 'No description'}</p>
                                             <div className="floor-stats">
                                                 <span>Total Slots: {floor.totalSlots}</span>
-                                                <span>Available: {floor.availableSlots || 0}</span>
                                             </div>
                                         </div>
                                         <div className="floor-actions">
@@ -653,32 +571,36 @@ export default function Admin() {
                                 </div>
                             </div>
                             <div className="slots-list">
-                                {slots.map(slot => (
-                                    <div key={slot.id} className={`slot-card ${slot.isOccupied ? 'occupied' : 'available'}`}>
-                                        <div className="slot-info">
-                                            <h4>Slot {slot.slotNumber}</h4>
-                                            <p><strong>Type:</strong> {slot.type}</p>
-                                            <p><strong>Floor:</strong> {slot.floor?.name}</p>
-                                            <span className={`status-badge ${slot.isOccupied ? 'occupied' : 'available'}`}>
-                                                {slot.isOccupied ? 'Occupied' : 'Available'}
-                                            </span>
+                                {slots.length === 0 ? (
+                                    <p>No slots found. {selectedFloorForSlots ? 'Try selecting a different floor.' : 'Add a new slot to get started.'}</p>
+                                ) : (
+                                    slots.map(slot => (
+                                        <div key={slot.id} className={`slot-card ${slot.isOccupied ? 'occupied' : 'available'}`}>
+                                            <div className="slot-info">
+                                                <h4>Slot {slot.slotNumber}</h4>
+                                                <p><strong>Type:</strong> {slot.type}</p>
+                                                <p><strong>Floor:</strong> {slot.floor?.name || 'Unknown'}</p>
+                                                <span className={`status-badge ${slot.isOccupied ? 'occupied' : 'available'}`}>
+                                                    {slot.isOccupied ? 'Occupied' : 'Available'}
+                                                </span>
+                                            </div>
+                                            <div className="slot-actions">
+                                                <button 
+                                                    className="edit-btn"
+                                                    onClick={() => handleEditSlot(slot)}
+                                                >
+                                                    Edit
+                                                </button>
+                                                <button 
+                                                    className="delete-btn"
+                                                    onClick={() => handleDeleteSlot(slot.id)}
+                                                >
+                                                    Delete
+                                                </button>
+                                            </div>
                                         </div>
-                                        <div className="slot-actions">
-                                            <button 
-                                                className="edit-btn"
-                                                onClick={() => handleEditSlot(slot)}
-                                            >
-                                                Edit
-                                            </button>
-                                            <button 
-                                                className="delete-btn"
-                                                onClick={() => handleDeleteSlot(slot.id)}
-                                            >
-                                                Delete
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
+                                    ))
+                                )}
                             </div>
                         </div>
                     )}

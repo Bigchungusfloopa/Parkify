@@ -12,6 +12,8 @@ import com.parkify.Park.repositories.SlotRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,23 +29,56 @@ public class SlotService {
     @Autowired
     private FloorRepository floorRepository;
 
-    // Get slots by floor for public (with DTO transformation)
-    @Transactional(readOnly = true)
+    @Autowired
+    private BookingService bookingService;
+
+    // FIXED: Get slots by floor for public (with real-time status updates)
+    @Transactional
     public List<SlotDto> getSlotsByFloorId(Long floorId) {
+        // FIRST: Update expired bookings before fetching slots
+        try {
+            bookingService.updateExpiredBookings();
+        } catch (Exception e) {
+            System.err.println("Warning: Could not update expired bookings: " + e.getMessage());
+            // Continue anyway - don't fail the whole request
+        }
+        
         List<Slot> slots = slotRepository.findByFloorId(floorId);
+        LocalDateTime now = LocalDateTime.now();
         
         return slots.stream().map(slot -> {
             SlotDto dto = new SlotDto();
             dto.setId(slot.getId());
             dto.setSlotNumber(slot.getSlotNumber());
             dto.setType(slot.getType());
-            dto.setOccupied(slot.isOccupied());
 
+            // FIXED: Get all bookings for this slot safely
             List<Booking> allBookingsForSlot = bookingRepository.findBySlotId(slot.getId());
 
-            // Find active booking
-            allBookingsForSlot.stream()
+            // Filter only ACTIVE bookings that haven't ended yet
+            List<Booking> activeBookings = allBookingsForSlot.stream()
                 .filter(b -> "ACTIVE".equalsIgnoreCase(b.getStatus()))
+                .filter(b -> b.getEndTime() != null && b.getEndTime().isAfter(now))
+                .collect(Collectors.toList());
+
+            // Check if there's a current active booking
+            boolean hasCurrentActiveBooking = activeBookings.stream()
+                .anyMatch(b -> b.getStartTime() != null && 
+                              (b.getStartTime().isBefore(now) || b.getStartTime().isEqual(now)));
+
+            // Set occupied status based on current active bookings
+            dto.setOccupied(hasCurrentActiveBooking);
+            
+            // Update the slot in database if status changed
+            if (slot.isOccupied() != hasCurrentActiveBooking) {
+                slot.setOccupied(hasCurrentActiveBooking);
+                slotRepository.save(slot);
+            }
+
+            // Find the currently active booking (if any)
+            activeBookings.stream()
+                .filter(b -> b.getStartTime() != null && 
+                            (b.getStartTime().isBefore(now) || b.getStartTime().isEqual(now)))
                 .findFirst()
                 .ifPresent(activeBooking -> {
                     SlotDto.BookingInfoDto bookingInfo = new SlotDto.BookingInfoDto();
@@ -52,8 +87,10 @@ public class SlotService {
                     dto.setActiveBooking(bookingInfo);
                 });
 
-            // Create reservation times
+            // Create reservation times for all ACTIVE future bookings
             List<BookingTimeDto> reservationTimes = allBookingsForSlot.stream()
+                .filter(b -> "ACTIVE".equalsIgnoreCase(b.getStatus()))
+                .filter(b -> b.getEndTime() != null && b.getEndTime().isAfter(now))
                 .map(booking -> {
                     BookingTimeDto timeDto = new BookingTimeDto();
                     timeDto.setStartTime(booking.getStartTime());
@@ -68,25 +105,21 @@ public class SlotService {
         }).collect(Collectors.toList());
     }
 
-    // Get all slots for admin
     @Transactional(readOnly = true)
     public List<Slot> getAllSlots() {
         return slotRepository.findAll();
     }
 
-    // Get slots by floor for admin (raw entities)
     @Transactional(readOnly = true)
     public List<Slot> getSlotsByFloorIdForAdmin(Long floorId) {
         return slotRepository.findByFloorId(floorId);
     }
 
-    // Create new slot
     @Transactional
     public Slot createSlot(SlotRequestDto slotDto) {
         Floor floor = floorRepository.findById(slotDto.getFloorId())
                 .orElseThrow(() -> new RuntimeException("Floor not found with id: " + slotDto.getFloorId()));
 
-        // Check if slot number already exists in this floor
         if (slotRepository.existsByFloorIdAndSlotNumber(slotDto.getFloorId(), slotDto.getSlotNumber())) {
             throw new RuntimeException("Slot number already exists in this floor");
         }
@@ -98,27 +131,22 @@ public class SlotService {
         slot.setFloor(floor);
 
         Slot savedSlot = slotRepository.save(slot);
-
-        // Update floor's total slots count
         updateFloorSlotCount(floor.getId());
 
         return savedSlot;
     }
 
-    // Update slot
     @Transactional
     public Slot updateSlot(Long slotId, SlotRequestDto slotDto) {
         Slot existingSlot = slotRepository.findById(slotId)
                 .orElseThrow(() -> new RuntimeException("Slot not found with id: " + slotId));
 
-        // If floor changed, update the relationship
         if (!existingSlot.getFloor().getId().equals(slotDto.getFloorId())) {
             Floor newFloor = floorRepository.findById(slotDto.getFloorId())
                     .orElseThrow(() -> new RuntimeException("Floor not found with id: " + slotDto.getFloorId()));
             existingSlot.setFloor(newFloor);
         }
 
-        // Check if slot number is being changed and if it conflicts
         if (!existingSlot.getSlotNumber().equals(slotDto.getSlotNumber()) &&
             slotRepository.existsByFloorIdAndSlotNumber(slotDto.getFloorId(), slotDto.getSlotNumber())) {
             throw new RuntimeException("Slot number already exists in this floor");
@@ -129,14 +157,11 @@ public class SlotService {
         existingSlot.setOccupied(slotDto.isOccupied());
 
         Slot updatedSlot = slotRepository.save(existingSlot);
-
-        // Update floor's total slots count
         updateFloorSlotCount(slotDto.getFloorId());
 
         return updatedSlot;
     }
 
-    // Delete slot
     @Transactional
     public void deleteSlot(Long slotId) {
         Slot slot = slotRepository.findById(slotId)
@@ -144,12 +169,9 @@ public class SlotService {
 
         Long floorId = slot.getFloor().getId();
         slotRepository.delete(slot);
-
-        // Update floor's total slots count
         updateFloorSlotCount(floorId);
     }
 
-    // Helper method to update floor's total slots count
     private void updateFloorSlotCount(Long floorId) {
         Floor floor = floorRepository.findById(floorId)
                 .orElseThrow(() -> new RuntimeException("Floor not found"));

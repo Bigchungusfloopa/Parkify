@@ -18,7 +18,6 @@ export default function ReservationModal({ slot, onConfirm, onCancel, onBookingC
     const [validationError, setValidationError] = useState('');
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('Credit Card');
 
-    // Helper to get current local time formatted for datetime-local input
     const getLocalDateTimeNow = () => {
         const now = new Date();
         const offsetMs = now.getTimezoneOffset() * 60000;
@@ -26,7 +25,6 @@ export default function ReservationModal({ slot, onConfirm, onCancel, onBookingC
         return localISOTime;
     };
 
-    // Reset state when the selected slot changes or modal closes
     useEffect(() => {
         if (slot) {
             setStep(1);
@@ -40,7 +38,6 @@ export default function ReservationModal({ slot, onConfirm, onCancel, onBookingC
         }
     }, [slot]);
 
-    // Calculate price whenever times or slot change
     useEffect(() => {
         if (slot && startTime && endTime && (step === 2 || step === 3)) {
             calculatePrice();
@@ -51,7 +48,6 @@ export default function ReservationModal({ slot, onConfirm, onCancel, onBookingC
 
     if (!slot) return null;
 
-    // Calculates the estimated price based on duration and slot type
     const calculatePrice = () => {
         try {
             const start = new Date(startTime);
@@ -81,7 +77,6 @@ export default function ReservationModal({ slot, onConfirm, onCancel, onBookingC
         }
     };
 
-    // Moves from Step 1 (Info) to Step 2 (Form) and pre-fills times
     const handleReserveClick = () => {
         const now = new Date();
         const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000);
@@ -92,17 +87,14 @@ export default function ReservationModal({ slot, onConfirm, onCancel, onBookingC
         setStep(2);
     };
 
-    // Validates Step 2 form and moves to Step 3 (Payment)
     const handleProceedToPayment = () => {
         setValidationError('');
 
-        // Validate Vehicle Number
         if (!vehicleNumber || !VEHICLE_NUMBER_PATTERN.test(vehicleNumber.trim())) {
             setValidationError('Invalid vehicle number format. Use format like KA01AB1234');
             return;
         }
 
-        // Validate Dates/Times
         if (!startTime || !endTime) {
             setValidationError('Please select start and end times.');
             return;
@@ -128,7 +120,6 @@ export default function ReservationModal({ slot, onConfirm, onCancel, onBookingC
             return;
         }
 
-        // Check for booking conflicts
         const userStart = new Date(startTime);
         const userEnd = new Date(endTime);
         if (slot.reservations && slot.reservations.length > 0) {
@@ -146,10 +137,8 @@ export default function ReservationModal({ slot, onConfirm, onCancel, onBookingC
         setStep(3);
     };
 
-    // Sends the booking request to the backend API
     const handleFinalBooking = async () => {
         try {
-            // Get the current user ID
             const userId = sessionStorage.getItem('userId');
             
             if (!userId) {
@@ -164,35 +153,27 @@ export default function ReservationModal({ slot, onConfirm, onCancel, onBookingC
                 throw new Error("Vehicle number is required");
             }
 
-            // FIXED: Proper date formatting for backend
             const formatDateForBackend = (dateString) => {
                 const date = new Date(dateString);
-                
-                // Format as: "2024-10-24T12:20:00" (without timezone)
                 const year = date.getFullYear();
                 const month = String(date.getMonth() + 1).padStart(2, '0');
                 const day = String(date.getDate()).padStart(2, '0');
                 const hours = String(date.getHours()).padStart(2, '0');
                 const minutes = String(date.getMinutes()).padStart(2, '0');
                 const seconds = String(date.getSeconds()).padStart(2, '0');
-                
                 return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
             };
 
-            // Create the booking data object
+            // FIXED: Create clean booking data object
             const bookingData = {
                 userId: parseInt(userId),
                 slotId: slot.id,
                 vehicleNumber: vehicleNumber.toUpperCase().replace(/[- ]/g, ''),
                 startTime: formatDateForBackend(startTime),
-                endTime: formatDateForBackend(endTime),
+                endTime: formatDateForBackend(endTime)
             };
 
-            console.log("Sending booking data:", bookingData);
-            console.log("Original start time:", startTime);
-            console.log("Original end time:", endTime);
-            console.log("Formatted start time:", bookingData.startTime);
-            console.log("Formatted end time:", bookingData.endTime);
+            console.log("Sending booking data:", JSON.stringify(bookingData, null, 2));
 
             const response = await fetch('http://localhost:8080/api/bookings', {
                 method: 'POST',
@@ -203,22 +184,30 @@ export default function ReservationModal({ slot, onConfirm, onCancel, onBookingC
             });
 
             console.log("Response status:", response.status);
+            console.log("Response headers:", response.headers);
+
+            // FIXED: Read response as text first to see what we're getting
+            const responseText = await response.text();
+            console.log("Raw response:", responseText);
 
             if (!response.ok) {
-                const errorText = await response.text();
-                console.error("Backend error:", errorText);
-                throw new Error(`Booking failed: ${errorText}`);
+                throw new Error(`Booking failed: ${responseText}`);
             }
 
-            const result = await response.json();
-            console.log("Booking successful!", result);
+            // FIXED: Try to parse as JSON only if we got a valid response
+            let result;
+            try {
+                result = JSON.parse(responseText);
+                console.log("Parsed booking result:", result);
+            } catch (parseError) {
+                console.error("JSON parse error:", parseError);
+                throw new Error("Invalid response from server");
+            }
             
-            // Handle success
             if (onBookingComplete) {
                 onBookingComplete(result);
             }
             
-            // Show success message and close modal
             alert("Booking confirmed successfully!");
             handleCancel();
             
@@ -228,20 +217,13 @@ export default function ReservationModal({ slot, onConfirm, onCancel, onBookingC
         }
     };
 
-    // Handles the final payment and booking
     const handlePayment = async () => {
         setIsBooking(true);
         try {
             console.log("Processing payment...");
-            
-            // Simulate payment processing
             await new Promise(resolve => setTimeout(resolve, 1000));
-            
             console.log("Payment successful, creating booking...");
-            
-            // Call the booking function
             await handleFinalBooking();
-            
         } catch (error) {
             console.error('Payment/Booking failed:', error);
             alert(`Payment/Booking failed: ${error.message}`);
@@ -250,7 +232,6 @@ export default function ReservationModal({ slot, onConfirm, onCancel, onBookingC
         }
     };
 
-    // Handles cancellation from any step
     const handleCancel = () => {
         setStep(1);
         if (onCancel) {
@@ -261,11 +242,10 @@ export default function ReservationModal({ slot, onConfirm, onCancel, onBookingC
     return (
         <div className="modal-overlay">
             <div className="modal-content">
-                {/* Step 1: Show Reservations (Initial View) */}
                 {step === 1 && (
                     <>
                         <h2>Slot {slot.slotNumber} - Reservations</h2>
-                    
+                        <p className="modal-subtitle">No current reservations for this slot.</p>
                         <div className="modal-actions">
                             <button onClick={handleCancel} className="btn-secondary">Close</button>
                             <button onClick={handleReserveClick} className="btn-primary">Reserve</button>
@@ -273,7 +253,6 @@ export default function ReservationModal({ slot, onConfirm, onCancel, onBookingC
                     </>
                 )}
 
-                {/* Step 2: Reservation Form */}
                 {step === 2 && (
                     <>
                         <h2>Reserve Slot {slot.slotNumber}</h2>
@@ -326,7 +305,6 @@ export default function ReservationModal({ slot, onConfirm, onCancel, onBookingC
                     </>
                 )}
 
-                {/* Step 3: Payment */}
                 {step === 3 && (
                     <>
                         <h2>Payment</h2>
