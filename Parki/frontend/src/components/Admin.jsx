@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import Aurora from '../components/Aurora';
 import '../styles/Admin.css';
 
-const StatCard = ({ title, value, icon, color }) => (
+const StatCard = ({ title, value, color }) => (
     <div className={`stat-card ${color}`}>
-        <div className="stat-icon">{icon}</div>
         <div className="stat-content">
             <h3>{title}</h3>
-            <p>{value}</p>
+            <p className="stat-value">{value}</p>
         </div>
     </div>
 );
@@ -169,6 +169,7 @@ export default function Admin() {
     const [users, setUsers] = useState([]);
     const [floors, setFloors] = useState([]);
     const [slots, setSlots] = useState([]);
+    const [bookings, setBookings] = useState([]);
     const [isFloorModalOpen, setIsFloorModalOpen] = useState(false);
     const [isSlotModalOpen, setIsSlotModalOpen] = useState(false);
     const [editingFloor, setEditingFloor] = useState(null);
@@ -176,16 +177,21 @@ export default function Admin() {
     const [selectedFloorForSlots, setSelectedFloorForSlots] = useState('');
     const navigate = useNavigate();
 
+    // Colors for charts
+    const COLORS = ['#667eea', '#764ba2', '#f093fb', '#4facfe'];
+
     useEffect(() => {
         if (activeTab === 'dashboard') {
             fetchDashboardStats();
+            fetchBookings(); // For charts
+            fetchFloors(); // For charts
         } else if (activeTab === 'users') {
             fetchUsers();
         } else if (activeTab === 'floors') {
             fetchFloors();
         } else if (activeTab === 'slots') {
             fetchSlots();
-            fetchFloors(); // Need floors for slot management
+            fetchFloors();
         }
     }, [activeTab]);
 
@@ -193,7 +199,7 @@ export default function Admin() {
         if (selectedFloorForSlots && activeTab === 'slots') {
             fetchSlotsByFloor(selectedFloorForSlots);
         } else if (activeTab === 'slots' && !selectedFloorForSlots) {
-            fetchSlots(); // Show all slots when no floor is selected
+            fetchSlots();
         }
     }, [selectedFloorForSlots, activeTab]);
 
@@ -221,7 +227,6 @@ export default function Admin() {
         try {
             const response = await fetch('http://localhost:8080/api/admin/floors');
             const data = await response.json();
-            console.log('Fetched floors:', data); // Debug log
             setFloors(data);
         } catch (error) {
             console.error('Failed to fetch floors:', error);
@@ -232,7 +237,6 @@ export default function Admin() {
         try {
             const response = await fetch('http://localhost:8080/api/admin/slots');
             const data = await response.json();
-            console.log('Fetched all slots:', data); // Debug log
             setSlots(data);
         } catch (error) {
             console.error('Failed to fetch slots:', error);
@@ -243,10 +247,19 @@ export default function Admin() {
         try {
             const response = await fetch(`http://localhost:8080/api/admin/floors/${floorId}/slots`);
             const data = await response.json();
-            console.log(`Fetched slots for floor ${floorId}:`, data); // Debug log
             setSlots(data);
         } catch (error) {
             console.error('Failed to fetch slots by floor:', error);
+        }
+    };
+
+    const fetchBookings = async () => {
+        try {
+            const response = await fetch('http://localhost:8080/api/admin/bookings');
+            const data = await response.json();
+            setBookings(data);
+        } catch (error) {
+            console.error('Failed to fetch bookings:', error);
         }
     };
 
@@ -307,8 +320,6 @@ export default function Admin() {
 
     const handleSaveSlot = async (slotData) => {
         try {
-            console.log('Saving slot with data:', slotData); // Debug log
-            
             if (editingSlot) {
                 await fetch(`http://localhost:8080/api/admin/slots/${editingSlot.id}`, {
                     method: 'PUT',
@@ -325,7 +336,6 @@ export default function Admin() {
             setIsSlotModalOpen(false);
             setEditingSlot(null);
             
-            // Refresh slots after save
             if (selectedFloorForSlots) {
                 fetchSlotsByFloor(selectedFloorForSlots);
             } else {
@@ -396,9 +406,50 @@ export default function Admin() {
         setSelectedFloorForSlots(floorId);
     };
 
+    // Prepare data for charts
+    const getBookingStatusData = () => {
+        const statusCount = bookings.reduce((acc, booking) => {
+            acc[booking.status] = (acc[booking.status] || 0) + 1;
+            return acc;
+        }, {});
+
+        return Object.entries(statusCount).map(([name, value]) => ({ name, value }));
+    };
+
+    const getFloorOccupancyData = () => {
+        return floors.map(floor => {
+            const floorSlots = slots.filter(s => s.floor?.id === floor.id);
+            const occupied = floorSlots.filter(s => s.isOccupied).length;
+            const available = floorSlots.length - occupied;
+            
+            return {
+                name: floor.name,
+                Occupied: occupied,
+                Available: available
+            };
+        });
+    };
+
+    const getRevenueData = () => {
+        // Group bookings by date and calculate revenue
+        const revenueByDate = bookings.reduce((acc, booking) => {
+            if (booking.startTime) {
+                const date = new Date(booking.startTime).toLocaleDateString();
+                acc[date] = (acc[date] || 0) + (booking.price || 0);
+            }
+            return acc;
+        }, {});
+
+        return Object.entries(revenueByDate)
+            .map(([date, revenue]) => ({ date, revenue: Math.round(revenue) }))
+            .slice(-7); // Last 7 days
+    };
+
     return (
         <div className="admin-page">
-            <div className="background"><Aurora /></div>
+            <div className="background" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0, pointerEvents: 'none' }}>
+                <Aurora />
+            </div>
             
             <header className="admin-header">
                 <div className="logo-text-admin">Parkify Admin</div>
@@ -415,25 +466,25 @@ export default function Admin() {
                         className={`sidebar-tab ${activeTab === 'dashboard' ? 'active' : ''}`}
                         onClick={() => setActiveTab('dashboard')}
                     >
-                        📊 Dashboard
+                        Dashboard
                     </button>
                     <button 
                         className={`sidebar-tab ${activeTab === 'users' ? 'active' : ''}`}
                         onClick={() => setActiveTab('users')}
                     >
-                        👥 Users
+                        Users
                     </button>
                     <button 
                         className={`sidebar-tab ${activeTab === 'floors' ? 'active' : ''}`}
                         onClick={() => setActiveTab('floors')}
                     >
-                        🏢 Floors
+                        Floors
                     </button>
                     <button 
                         className={`sidebar-tab ${activeTab === 'slots' ? 'active' : ''}`}
                         onClick={() => setActiveTab('slots')}
                     >
-                        🅿️ Slots
+                        Slots
                     </button>
                 </div>
 
@@ -445,33 +496,82 @@ export default function Admin() {
                                 <StatCard 
                                     title="Total Users" 
                                     value={stats.totalUsers || 0} 
-                                    icon="👥" 
                                     color="blue" 
                                 />
                                 <StatCard 
                                     title="Total Bookings" 
                                     value={stats.totalBookings || 0} 
-                                    icon="📋" 
                                     color="green" 
                                 />
                                 <StatCard 
                                     title="Active Bookings" 
                                     value={stats.activeBookings || 0} 
-                                    icon="🚗" 
                                     color="orange" 
                                 />
                                 <StatCard 
                                     title="Total Floors" 
                                     value={stats.totalFloors || 0} 
-                                    icon="🏢" 
                                     color="purple" 
                                 />
                                 <StatCard 
                                     title="Total Revenue" 
                                     value={`₹${stats.totalRevenue || 0}`} 
-                                    icon="💰" 
                                     color="gold" 
                                 />
+                            </div>
+
+                            <div className="charts-grid">
+                                <div className="chart-card">
+                                    <h3>Booking Status Distribution</h3>
+                                    <ResponsiveContainer width="100%" height={300}>
+                                        <PieChart>
+                                            <Pie
+                                                data={getBookingStatusData()}
+                                                cx="50%"
+                                                cy="50%"
+                                                labelLine={false}
+                                                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                                                outerRadius={80}
+                                                fill="#8884d8"
+                                                dataKey="value"
+                                            >
+                                                {getBookingStatusData().map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                ))}
+                                            </Pie>
+                                            <Tooltip />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                </div>
+
+                                <div className="chart-card">
+                                    <h3>Floor Occupancy</h3>
+                                    <ResponsiveContainer width="100%" height={300}>
+                                        <BarChart data={getFloorOccupancyData()}>
+                                            <CartesianGrid strokeDasharray="3 3" />
+                                            <XAxis dataKey="name" />
+                                            <YAxis />
+                                            <Tooltip />
+                                            <Legend />
+                                            <Bar dataKey="Occupied" fill="#f093fb" />
+                                            <Bar dataKey="Available" fill="#4facfe" />
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </div>
+
+                                <div className="chart-card full-width">
+                                    <h3>Revenue Trend (Last 7 Days)</h3>
+                                    <ResponsiveContainer width="100%" height={300}>
+                                        <LineChart data={getRevenueData()}>
+                                            <CartesianGrid strokeDasharray="3 3" />
+                                            <XAxis dataKey="date" />
+                                            <YAxis />
+                                            <Tooltip />
+                                            <Legend />
+                                            <Line type="monotone" dataKey="revenue" stroke="#667eea" strokeWidth={2} />
+                                        </LineChart>
+                                    </ResponsiveContainer>
+                                </div>
                             </div>
                         </div>
                     )}
