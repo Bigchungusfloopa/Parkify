@@ -177,14 +177,13 @@ export default function Admin() {
     const [selectedFloorForSlots, setSelectedFloorForSlots] = useState('');
     const navigate = useNavigate();
 
-    // Colors for charts
     const COLORS = ['#667eea', '#764ba2', '#f093fb', '#4facfe'];
 
     useEffect(() => {
         if (activeTab === 'dashboard') {
             fetchDashboardStats();
-            fetchBookings(); // For charts
-            fetchFloors(); // For charts
+            fetchBookings();
+            fetchFloors();
         } else if (activeTab === 'users') {
             fetchUsers();
         } else if (activeTab === 'floors') {
@@ -278,19 +277,6 @@ export default function Admin() {
             fetchUsers();
         } catch (error) {
             console.error('Failed to update role:', error);
-        }
-    };
-
-    const deleteUser = async (userId) => {
-        if (window.confirm('Are you sure you want to delete this user?')) {
-            try {
-                await fetch(`http://localhost:8080/api/admin/users/${userId}`, {
-                    method: 'DELETE'
-                });
-                fetchUsers();
-            } catch (error) {
-                console.error('Failed to delete user:', error);
-            }
         }
     };
 
@@ -406,7 +392,6 @@ export default function Admin() {
         setSelectedFloorForSlots(floorId);
     };
 
-    // Prepare data for charts
     const getBookingStatusData = () => {
         const statusCount = bookings.reduce((acc, booking) => {
             acc[booking.status] = (acc[booking.status] || 0) + 1;
@@ -431,7 +416,6 @@ export default function Admin() {
     };
 
     const getRevenueData = () => {
-        // Group bookings by date and calculate revenue
         const revenueByDate = bookings.reduce((acc, booking) => {
             if (booking.startTime) {
                 const date = new Date(booking.startTime).toLocaleDateString();
@@ -442,7 +426,7 @@ export default function Admin() {
 
         return Object.entries(revenueByDate)
             .map(([date, revenue]) => ({ date, revenue: Math.round(revenue) }))
-            .slice(-7); // Last 7 days
+            .slice(-7);
     };
 
     return (
@@ -593,16 +577,11 @@ export default function Admin() {
                                             <select 
                                                 value={user.role || 'ROLE_USER'} 
                                                 onChange={(e) => updateUserRole(user.id, e.target.value)}
+                                                className="role-select"
                                             >
                                                 <option value="ROLE_USER">User</option>
                                                 <option value="ROLE_ADMIN">Admin</option>
                                             </select>
-                                            <button 
-                                                className="delete-btn"
-                                                onClick={() => deleteUser(user.id)}
-                                            >
-                                                Delete
-                                            </button>
                                         </div>
                                     </div>
                                 ))}
@@ -620,7 +599,7 @@ export default function Admin() {
                             </div>
                             <div className="floors-list">
                                 {floors.map(floor => (
-                                    <div key={floor.id} className="floor-card">
+                                    <div key={floor.id} className="floor-card-admin">
                                         <div className="floor-info">
                                             <h4>{floor.name}</h4>
                                             <p>{floor.details || 'No description'}</p>
@@ -636,7 +615,7 @@ export default function Admin() {
                                                 Edit
                                             </button>
                                             <button 
-                                                className="delete-btn"
+                                                className="delete-btn-admin"
                                                 onClick={() => handleDeleteFloor(floor.id)}
                                             >
                                                 Delete
@@ -675,7 +654,7 @@ export default function Admin() {
                                     <p>No slots found. {selectedFloorForSlots ? 'Try selecting a different floor.' : 'Add a new slot to get started.'}</p>
                                 ) : (
                                     slots.map(slot => (
-                                        <div key={slot.id} className={`slot-card ${slot.isOccupied ? 'occupied' : 'available'}`}>
+                                        <div key={slot.id} className="slot-card-admin">
                                             <div className="slot-info">
                                                 <h4>Slot {slot.slotNumber}</h4>
                                                 <p><strong>Type:</strong> {slot.type}</p>
@@ -692,7 +671,7 @@ export default function Admin() {
                                                     Edit
                                                 </button>
                                                 <button 
-                                                    className="delete-btn"
+                                                    className="delete-btn-admin"
                                                     onClick={() => handleDeleteSlot(slot.id)}
                                                 >
                                                     Delete
