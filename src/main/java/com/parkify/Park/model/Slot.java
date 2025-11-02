@@ -1,6 +1,6 @@
 package com.parkify.Park.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -16,11 +16,8 @@ public class Slot {
     private String type;
     private boolean isOccupied;
 
-    // REMOVED: The OneToOne activeBooking relationship that was causing issues
-    // We'll fetch active bookings through the BookingRepository instead
-
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "floor_id")
-    @JsonIgnore
+    @JsonIgnoreProperties({"slots"})
     private Floor floor;
 }

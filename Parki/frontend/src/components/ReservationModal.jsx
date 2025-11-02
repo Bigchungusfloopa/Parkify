@@ -17,6 +17,12 @@ export default function ReservationModal({ slot, onConfirm, onCancel, onBookingC
     const [isBooking, setIsBooking] = useState(false);
     const [validationError, setValidationError] = useState('');
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('Credit Card');
+    
+    // Payment field states
+    const [cardNumber, setCardNumber] = useState('');
+    const [cvv, setCvv] = useState('');
+    const [upiId, setUpiId] = useState('');
+    const [paymentError, setPaymentError] = useState('');
 
     const getLocalDateTimeNow = () => {
         const now = new Date();
@@ -35,6 +41,10 @@ export default function ReservationModal({ slot, onConfirm, onCancel, onBookingC
             setIsBooking(false);
             setValidationError('');
             setSelectedPaymentMethod('Credit Card');
+            setCardNumber('');
+            setCvv('');
+            setUpiId('');
+            setPaymentError('');
         }
     }, [slot]);
 
@@ -217,7 +227,41 @@ export default function ReservationModal({ slot, onConfirm, onCancel, onBookingC
         }
     };
 
+    const validatePayment = () => {
+        setPaymentError('');
+
+        if (selectedPaymentMethod === 'Credit Card' || selectedPaymentMethod === 'Debit Card') {
+            // Validate card number (16 digits)
+            const cardRegex = /^[0-9]{16}$/;
+            if (!cardRegex.test(cardNumber.replace(/\s/g, ''))) {
+                setPaymentError('Card number must be 16 digits');
+                return false;
+            }
+
+            // Validate CVV (3 digits)
+            const cvvRegex = /^[0-9]{3}$/;
+            if (!cvvRegex.test(cvv)) {
+                setPaymentError('CVV must be 3 digits');
+                return false;
+            }
+        } else if (selectedPaymentMethod === 'UPI') {
+            // Validate UPI ID (format: username@bank)
+            const upiRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9]+$/;
+            if (!upiRegex.test(upiId)) {
+                setPaymentError('Invalid UPI ID format (e.g., username@bank)');
+                return false;
+            }
+        }
+        // Cash doesn't need validation
+
+        return true;
+    };
+
     const handlePayment = async () => {
+        if (!validatePayment()) {
+            return;
+        }
+
         setIsBooking(true);
         try {
             console.log("Processing payment...");
@@ -310,30 +354,44 @@ export default function ReservationModal({ slot, onConfirm, onCancel, onBookingC
                         <h2>Payment</h2>
                         <p className="modal-subtitle">Complete payment to reserve Slot {slot.slotNumber}.</p>
 
+                        {paymentError && <p className="validation-error">{paymentError}</p>}
+
                         <div className="form-group">
                             <label>Payment Method</label>
                             <div className="payment-options">
                                 <button
                                     className={`payment-btn ${selectedPaymentMethod === 'Credit Card' ? 'active' : ''}`}
-                                    onClick={() => setSelectedPaymentMethod('Credit Card')}
+                                    onClick={() => {
+                                        setSelectedPaymentMethod('Credit Card');
+                                        setPaymentError('');
+                                    }}
                                 >
                                     Credit Card
                                 </button>
                                 <button
                                     className={`payment-btn ${selectedPaymentMethod === 'Debit Card' ? 'active' : ''}`}
-                                    onClick={() => setSelectedPaymentMethod('Debit Card')}
+                                    onClick={() => {
+                                        setSelectedPaymentMethod('Debit Card');
+                                        setPaymentError('');
+                                    }}
                                 >
                                     Debit Card
                                 </button>
                                 <button
                                     className={`payment-btn ${selectedPaymentMethod === 'UPI' ? 'active' : ''}`}
-                                    onClick={() => setSelectedPaymentMethod('UPI')}
+                                    onClick={() => {
+                                        setSelectedPaymentMethod('UPI');
+                                        setPaymentError('');
+                                    }}
                                 >
                                     UPI
                                 </button>
                                 <button
                                     className={`payment-btn ${selectedPaymentMethod === 'Cash' ? 'active' : ''}`}
-                                    onClick={() => setSelectedPaymentMethod('Cash')}
+                                    onClick={() => {
+                                        setSelectedPaymentMethod('Cash');
+                                        setPaymentError('');
+                                    }}
                                 >
                                     Cash
                                 </button>
@@ -344,12 +402,38 @@ export default function ReservationModal({ slot, onConfirm, onCancel, onBookingC
                             <>
                                 <div className="form-group">
                                     <label htmlFor="cardNumber">Card Number</label>
-                                    <input type="text" id="cardNumber" placeholder="•••• •••• •••• ••••"/>
+                                    <input 
+                                        type="text" 
+                                        id="cardNumber" 
+                                        placeholder="1234 5678 9012 3456"
+                                        value={cardNumber}
+                                        onChange={(e) => {
+                                            const value = e.target.value.replace(/\s/g, '');
+                                            if (/^\d*$/.test(value) && value.length <= 16) {
+                                                setCardNumber(value.replace(/(\d{4})/g, '$1 ').trim());
+                                            }
+                                        }}
+                                        maxLength="19"
+                                        required
+                                    />
                                 </div>
                                 <div className="form-group card-details-row">
                                     <div className="cvv-group">
                                         <label htmlFor="cvv">CVV</label>
-                                        <input type="text" id="cvv" placeholder="•••" maxLength="3"/>
+                                        <input 
+                                            type="text" 
+                                            id="cvv" 
+                                            placeholder="123" 
+                                            value={cvv}
+                                            onChange={(e) => {
+                                                const value = e.target.value;
+                                                if (/^\d*$/.test(value) && value.length <= 3) {
+                                                    setCvv(value);
+                                                }
+                                            }}
+                                            maxLength="3"
+                                            required
+                                        />
                                     </div>
                                 </div>
                             </>
@@ -358,7 +442,23 @@ export default function ReservationModal({ slot, onConfirm, onCancel, onBookingC
                         {selectedPaymentMethod === 'UPI' && (
                             <div className="form-group">
                                 <label htmlFor="upiId">UPI ID</label>
-                                <input type="text" id="upiId" placeholder="yourname@bank"/>
+                                <input 
+                                    type="text" 
+                                    id="upiId" 
+                                    placeholder="yourname@bank"
+                                    value={upiId}
+                                    onChange={(e) => setUpiId(e.target.value)}
+                                    required
+                                />
+                                <small>Format: username@bankname (e.g., john@paytm)</small>
+                            </div>
+                        )}
+
+                        {selectedPaymentMethod === 'Cash' && (
+                            <div className="form-group">
+                                <p style={{opacity: 0.8, fontSize: '0.95rem', margin: '1rem 0'}}>
+                                    Please pay ₹{calculatedPrice.toFixed(2)} at the counter upon arrival.
+                                </p>
                             </div>
                         )}
 

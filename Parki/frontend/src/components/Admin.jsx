@@ -77,19 +77,16 @@ const SlotModal = ({ isOpen, onClose, slot, floors, onSave }) => {
     const [slotNumber, setSlotNumber] = useState('');
     const [type, setType] = useState('Regular');
     const [floorId, setFloorId] = useState('');
-    const [isOccupied, setIsOccupied] = useState(false);
 
     useEffect(() => {
         if (slot) {
             setSlotNumber(slot.slotNumber || '');
             setType(slot.type || 'Regular');
             setFloorId(slot.floor?.id || '');
-            setIsOccupied(slot.isOccupied || false);
         } else {
             setSlotNumber('');
             setType('Regular');
             setFloorId(floors.length > 0 ? floors[0].id : '');
-            setIsOccupied(false);
         }
     }, [slot, floors]);
 
@@ -99,7 +96,7 @@ const SlotModal = ({ isOpen, onClose, slot, floors, onSave }) => {
             slotNumber,
             type,
             floorId: parseInt(floorId),
-            isOccupied
+            isOccupied: false // Always set to false when creating/editing
         });
     };
 
@@ -140,16 +137,6 @@ const SlotModal = ({ isOpen, onClose, slot, floors, onSave }) => {
                                 </option>
                             ))}
                         </select>
-                    </div>
-                    <div className="form-group">
-                        <label>
-                            <input
-                                type="checkbox"
-                                checked={isOccupied}
-                                onChange={(e) => setIsOccupied(e.target.checked)}
-                            />
-                            Currently Occupied
-                        </label>
                     </div>
                     <div className="modal-actions">
                         <button type="button" onClick={onClose} className="btn-secondary">Cancel</button>
@@ -402,17 +389,23 @@ export default function Admin() {
     };
 
     const getFloorOccupancyData = () => {
+        // First, get all slots
+        const allSlots = slots.length > 0 ? slots : [];
+        
         return floors.map(floor => {
-            const floorSlots = slots.filter(s => s.floor?.id === floor.id);
+            // Filter slots that belong to this floor
+            const floorSlots = allSlots.filter(s => s.floor?.id === floor.id || s.floorId === floor.id);
             const occupied = floorSlots.filter(s => s.isOccupied).length;
             const available = floorSlots.length - occupied;
+            
+            console.log(`Floor ${floor.name}: ${floorSlots.length} total slots, ${occupied} occupied, ${available} available`);
             
             return {
                 name: floor.name,
                 Occupied: occupied,
                 Available: available
             };
-        });
+        }).filter(data => data.Occupied > 0 || data.Available > 0); // Only show floors with slots
     };
 
     const getRevenueData = () => {
@@ -435,44 +428,19 @@ export default function Admin() {
                 <Aurora />
             </div>
             
-            <header className="admin-header">
-                <div className="logo-text-admin">Parkify Admin</div>
+            <header className="admin-header-floating">
+                <div className="logo-text-admin">Parkify</div>
                 <nav className="admin-nav">
-                    <button className="nav-button" onClick={() => navigate('/dashboard')}>User Dashboard</button>
+                    <button className="nav-button" onClick={() => setActiveTab('dashboard')}>Dashboard</button>
+                    <button className="nav-button" onClick={() => setActiveTab('users')}>Users</button>
+                    <button className="nav-button" onClick={() => setActiveTab('floors')}>Floors</button>
+                    <button className="nav-button" onClick={() => setActiveTab('slots')}>Slots</button>
                     <button className="nav-button logout-button" onClick={handleLogout}>Logout</button>
                 </nav>
             </header>
 
-            <main className="admin-main">
-                <div className="admin-sidebar">
-                    <h3>Admin Panel</h3>
-                    <button 
-                        className={`sidebar-tab ${activeTab === 'dashboard' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('dashboard')}
-                    >
-                        Dashboard
-                    </button>
-                    <button 
-                        className={`sidebar-tab ${activeTab === 'users' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('users')}
-                    >
-                        Users
-                    </button>
-                    <button 
-                        className={`sidebar-tab ${activeTab === 'floors' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('floors')}
-                    >
-                        Floors
-                    </button>
-                    <button 
-                        className={`sidebar-tab ${activeTab === 'slots' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('slots')}
-                    >
-                        Slots
-                    </button>
-                </div>
-
-                <div className="admin-content">
+            <main className="admin-main-new">
+                <div className="admin-content-full">
                     {activeTab === 'dashboard' && (
                         <div className="dashboard-tab">
                             <h2>Admin Dashboard</h2>
@@ -518,12 +486,21 @@ export default function Admin() {
                                                 outerRadius={80}
                                                 fill="#8884d8"
                                                 dataKey="value"
+                                                stroke="rgba(255, 255, 255, 0.2)"
+                                                strokeWidth={1}
                                             >
                                                 {getBookingStatusData().map((entry, index) => (
                                                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                                 ))}
                                             </Pie>
-                                            <Tooltip />
+                                            <Tooltip 
+                                                contentStyle={{
+                                                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                                                    borderRadius: '8px',
+                                                    color: 'white'
+                                                }}
+                                            />
                                         </PieChart>
                                     </ResponsiveContainer>
                                 </div>
@@ -532,13 +509,20 @@ export default function Admin() {
                                     <h3>Floor Occupancy</h3>
                                     <ResponsiveContainer width="100%" height={300}>
                                         <BarChart data={getFloorOccupancyData()}>
-                                            <CartesianGrid strokeDasharray="3 3" />
-                                            <XAxis dataKey="name" />
-                                            <YAxis />
-                                            <Tooltip />
+                                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
+                                            <XAxis dataKey="name" stroke="rgba(255, 255, 255, 0.6)" />
+                                            <YAxis stroke="rgba(255, 255, 255, 0.6)" />
+                                            <Tooltip 
+                                                contentStyle={{
+                                                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                                                    borderRadius: '8px',
+                                                    color: 'white'
+                                                }}
+                                            />
                                             <Legend />
-                                            <Bar dataKey="Occupied" fill="#f093fb" />
-                                            <Bar dataKey="Available" fill="#4facfe" />
+                                            <Bar dataKey="Available" fill="rgba(100, 150, 255, 0.7)" />
+                                            <Bar dataKey="Occupied" fill="rgba(255, 255, 255, 0.3)" />
                                         </BarChart>
                                     </ResponsiveContainer>
                                 </div>
@@ -547,12 +531,19 @@ export default function Admin() {
                                     <h3>Revenue Trend (Last 7 Days)</h3>
                                     <ResponsiveContainer width="100%" height={300}>
                                         <LineChart data={getRevenueData()}>
-                                            <CartesianGrid strokeDasharray="3 3" />
-                                            <XAxis dataKey="date" />
-                                            <YAxis />
-                                            <Tooltip />
+                                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
+                                            <XAxis dataKey="date" stroke="rgba(255, 255, 255, 0.6)" />
+                                            <YAxis stroke="rgba(255, 255, 255, 0.6)" />
+                                            <Tooltip 
+                                                contentStyle={{
+                                                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                                                    borderRadius: '8px',
+                                                    color: 'white'
+                                                }}
+                                            />
                                             <Legend />
-                                            <Line type="monotone" dataKey="revenue" stroke="#667eea" strokeWidth={2} />
+                                            <Line type="monotone" dataKey="revenue" stroke="rgba(100, 150, 255, 0.9)" strokeWidth={3} dot={{ fill: 'rgba(255, 255, 255, 0.8)', r: 4 }} />
                                         </LineChart>
                                     </ResponsiveContainer>
                                 </div>

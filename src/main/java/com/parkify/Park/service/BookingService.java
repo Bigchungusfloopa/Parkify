@@ -199,6 +199,12 @@ public class BookingService {
         bookingRepository.deleteById(bookingId);
     }
 
+    // --- Get All Bookings (Admin) ---
+    @Transactional(readOnly = true)
+    public List<Booking> getAllBookings() {
+        return bookingRepository.findAllByOrderByStartTimeDesc();
+    }
+
     // --- Get Booking History Method ---
     @Transactional(readOnly = true)
     public List<BookingHistoryDto> getBookingHistoryForUser(Long userId) {
@@ -214,6 +220,14 @@ public class BookingService {
             dto.setPrice(booking.getPrice());
             dto.setStartTime(booking.getStartTime());
             dto.setEndTime(booking.getEndTime());
+
+            // ADDED: Set userId and slotId for editing
+            if (booking.getUser() != null) {
+                dto.setUserId(booking.getUser().getId());
+            }
+            if (booking.getSlot() != null) {
+                dto.setSlotId(booking.getSlot().getId());
+            }
 
             // Determine status: "COMPLETED" if endTime is in the past, otherwise use DB status
             if (booking.getEndTime() != null && booking.getEndTime().isBefore(now)) {

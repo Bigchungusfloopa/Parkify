@@ -4,7 +4,7 @@ import Aurora from '../components/Aurora';
 import EditBookingModal from '../components/EditBookingModal';
 import '../styles/History.css';
 
-const HistoryCard = ({ booking, onEdit, onCancel, onDelete }) => (
+const HistoryCard = ({ booking, onEdit, onDelete }) => (
     <div className="history-card">
         <div className="card-main-info">
             <span className="slot-info">Slot {booking.slotNumber}</span>
@@ -21,14 +21,9 @@ const HistoryCard = ({ booking, onEdit, onCancel, onDelete }) => (
         </div>
         <div className="card-actions">
             {booking.status === 'ACTIVE' && (
-                <>
-                    <button className="edit-btn" onClick={() => onEdit(booking)}>
-                        Edit
-                    </button>
-                    <button className="cancel-btn" onClick={() => onCancel(booking.bookingId)}>
-                        Cancel
-                    </button>
-                </>
+                <button className="edit-btn" onClick={() => onEdit(booking)}>
+                    Edit
+                </button>
             )}
             <button className="delete-btn" onClick={() => onDelete(booking.bookingId)}>
                 Delete
@@ -91,31 +86,8 @@ export default function History() {
         setIsEditModalOpen(true);
     };
 
-    const handleCancel = async (bookingId) => {
-        if (!window.confirm('Are you sure you want to cancel this booking?')) return;
-
-        try {
-            const response = await fetch(`http://localhost:8080/api/bookings/${bookingId}/cancel`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' }
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to cancel booking');
-            }
-
-            // Refresh the history
-            fetchHistory();
-            alert('Booking cancelled successfully');
-            
-        } catch (err) {
-            console.error('Failed to cancel booking:', err);
-            alert('Failed to cancel booking: ' + err.message);
-        }
-    };
-
     const handleDelete = async (bookingId) => {
-        if (!window.confirm('Are you sure you want to delete this booking?')) return;
+        if (!window.confirm('Are you sure you want to delete this booking? This action cannot be undone.')) return;
 
         try {
             const response = await fetch(`http://localhost:8080/api/bookings/${bookingId}`, {
@@ -160,7 +132,6 @@ export default function History() {
                                 key={booking.bookingId} 
                                 booking={booking}
                                 onEdit={handleEdit}
-                                onCancel={handleCancel}
                                 onDelete={handleDelete}
                             />
                         ))}
