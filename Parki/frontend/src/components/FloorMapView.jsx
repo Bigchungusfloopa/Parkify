@@ -14,6 +14,18 @@ export default function FloorMapView({ selectedFloorId, onGoBack }) {
             const response = await fetch(`http://localhost:8080/api/floors/${selectedFloorId}/slots`);
             if (!response.ok) throw new Error('Could not fetch slots');
             const data = await response.json();
+            
+            // FIXED: Add detailed logging to see what data we're getting
+            console.log("Fetched slots data:", data);
+            data.forEach(slot => {
+                console.log(`Slot ${slot.slotNumber}:`, {
+                    isOccupied: slot.isOccupied,
+                    occupied: slot.occupied,
+                    activeBooking: slot.activeBooking,
+                    reservations: slot.reservations
+                });
+            });
+            
             setSlots(data);
         } catch (error) {
             console.error("Failed to fetch slots:", error);
@@ -27,8 +39,9 @@ export default function FloorMapView({ selectedFloorId, onGoBack }) {
         fetchSlots();
     }, [selectedFloorId]);
 
-    // Opens the reservation modal - NOW allows clicking on ALL slots to see details
+    // Opens the reservation modal
     const handleSlotClick = (slot) => {
+        console.log("Slot clicked:", slot); // Debug log
         setBookingSlot(slot);
     };
 
@@ -102,15 +115,20 @@ export default function FloorMapView({ selectedFloorId, onGoBack }) {
                         </h3>
                         <div className="slots-grid">
                             {groupedSlots[groupTitle].map(slot => {
-                                // Determine Status and Title for tooltip
-                                const isCurrentlyOccupied = slot.isOccupied;
+                                // FIXED: Determine Status and Title for tooltip
+                                // Check both isOccupied (boolean) and occupied (boolean) properties
+                                const isCurrentlyOccupied = slot.isOccupied === true || slot.occupied === true;
+                                const hasActiveBooking = slot.activeBooking != null;
                                 const hasReservations = !isCurrentlyOccupied && slot.reservations && slot.reservations.length > 0;
+                                
                                 let statusClass = 'available';
                                 let statusTitle = 'Available - Click to book';
 
-                                if (isCurrentlyOccupied) {
+                                // FIXED: Priority order for status determination
+                                if (isCurrentlyOccupied || hasActiveBooking) {
                                     statusClass = 'occupied';
                                     statusTitle = 'Occupied - Click to view details';
+                                    console.log(`Slot ${slot.slotNumber} marked as OCCUPIED`); // Debug
                                 } else if (hasReservations) {
                                      statusClass = 'reserved';
                                      statusTitle = 'Has future bookings - Click to view available times';

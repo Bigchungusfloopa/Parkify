@@ -6,7 +6,7 @@ const EV_SURCHARGE = 50;
 const VIP_SURCHARGE = 100;
 
 // Regex for Indian number plate format
-const VEHICLE_NUMBER_PATTERN = /^[A-Z]{2}[- ]?[0-9]{1,2}[- ]?[A-Z]{1,2}[- ]?[0-9]{1,4}$/i;
+const VEHICLE_NUMBER_PATTERN = /^[A-Z]{2}[- ]?[0-9]{1,2}[- ]?[A-Z]{1,2}[- ]?[0-9]{1,4}$/;
 
 export default function ReservationModal({ slot, onConfirm, onCancel, onBookingComplete }) {
     const [step, setStep] = useState(1);
@@ -353,21 +353,18 @@ export default function ReservationModal({ slot, onConfirm, onCancel, onBookingC
                     <>
                         <h2>Slot {slot.slotNumber} - Details</h2>
                         
-                        {/* Show current status */}
-                        <div className="slot-status-info">
-                            {slot.isOccupied ? (
-                                <>
-                                    <p className="status-occupied"> Currently Occupied</p>
-                                    {slot.activeBooking && (
-                                        <div className="active-booking-info">
-                                            <p><strong>Occupied until:</strong> {formatDateTime(slot.activeBooking.endTime)}</p>
-                                        </div>
-                                    )}
-                                </>
-                            ) : (
-                                <p className="status-available"> Currently Available</p>
-                            )}
-                        </div>
+<div className="slot-status-info">
+    {slot.isOccupied && (
+        <>
+            <p className="status-occupied"> Currently Occupied</p>
+            {slot.activeBooking && (
+                <div className="active-booking-info">
+                    <p><strong>Occupied until:</strong> {formatDateTime(slot.activeBooking.endTime)}</p>
+                </div>
+            )}
+        </>
+    )}
+</div>
 
                         {/* Show available time slots */}
                         <div className="available-times-section">
