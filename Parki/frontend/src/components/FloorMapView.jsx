@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ReservationModal from './ReservationModal';
 
-// Accept the new onGoBack prop in the function signature
 export default function FloorMapView({ selectedFloorId, onGoBack }) {
     const [slots, setSlots] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -28,11 +27,9 @@ export default function FloorMapView({ selectedFloorId, onGoBack }) {
         fetchSlots();
     }, [selectedFloorId]);
 
-    // Opens the reservation modal
+    // Opens the reservation modal - NOW allows clicking on ALL slots to see details
     const handleSlotClick = (slot) => {
-        if (!slot.isOccupied) { // Only open modal if slot is available
-            setBookingSlot(slot);
-        }
+        setBookingSlot(slot);
     };
 
     // Group slots by type
@@ -61,11 +58,26 @@ export default function FloorMapView({ selectedFloorId, onGoBack }) {
     return (
         <div className="floor-map-container">
             <div className="floor-map-header">
-                {/* Render the back button and call onGoBack when clicked */}
                 <button onClick={onGoBack} className="back-button">
                     &larr; Back to Floors
                 </button>
                 <h2>Floor {selectedFloorId} Layout</h2>
+            </div>
+
+            {/* Legend for slot colors */}
+            <div className="slot-legend">
+                <div className="legend-item">
+                    <span className="legend-color available"></span>
+                    <span>Available</span>
+                </div>
+                <div className="legend-item">
+                    <span className="legend-color occupied"></span>
+                    <span>Currently Occupied</span>
+                </div>
+                <div className="legend-item">
+                    <span className="legend-color reserved"></span>
+                    <span>Has Future Bookings</span>
+                </div>
             </div>
 
             {/* Render groups in the specified order */}
@@ -94,20 +106,20 @@ export default function FloorMapView({ selectedFloorId, onGoBack }) {
                                 const isCurrentlyOccupied = slot.isOccupied;
                                 const hasReservations = !isCurrentlyOccupied && slot.reservations && slot.reservations.length > 0;
                                 let statusClass = 'available';
-                                let statusTitle = 'Vacant';
+                                let statusTitle = 'Available - Click to book';
 
                                 if (isCurrentlyOccupied) {
                                     statusClass = 'occupied';
-                                    statusTitle = 'Occupied';
+                                    statusTitle = 'Occupied - Click to view details';
                                 } else if (hasReservations) {
                                      statusClass = 'reserved';
-                                     statusTitle = 'Reserved';
+                                     statusTitle = 'Has future bookings - Click to view available times';
                                 }
 
                                 return (
                                     <div
                                         key={slot.id}
-                                        title={`Slot ${slot.slotNumber}: ${statusTitle}`}
+                                        title={statusTitle}
                                         className={`parking-slot-box ${statusClass} ${slot.type.toLowerCase().replace('-', '')}`}
                                         onClick={() => handleSlotClick(slot)}
                                     >

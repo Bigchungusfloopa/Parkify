@@ -421,6 +421,109 @@
     opacity: 1;
 }
 
+/* Add these styles to your Dashboard.css */
+
+/* Slot Legend */
+.slot-legend {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin-bottom: 2rem;
+    padding: 1rem;
+    background: rgba(30, 41, 59, 0.7);
+    border: 1px solid #334155;
+    border-radius: 12px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.legend-color {
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    border: 2px solid;
+}
+
+.legend-color.available {
+    background-color: rgba(59, 130, 246, 0.5);
+    border-color: #3b82f6;
+}
+
+.legend-color.occupied {
+    background-color: rgba(239, 68, 68, 0.6);
+    border-color: #ef4444;
+    animation: pulse-red 2s ease-in-out infinite;
+}
+
+.legend-color.reserved {
+    background-color: rgba(250, 204, 21, 0.5);
+    border-color: #facc15;
+}
+
+.legend-item span:last-child {
+    color: #cbd5e1;
+    font-size: 0.9rem;
+}
+
+@keyframes pulse-red {
+    0%, 100% {
+        opacity: 0.6;
+    }
+    50% {
+        opacity: 0.9;
+    }
+}
+
+/* Updated occupied slot styling with pulsing animation */
+.parking-slot-box.occupied {
+    background-color: rgba(239, 68, 68, 0.6) !important;
+    border-color: #ef4444 !important;
+    color: #fee2e2 !important;
+    cursor: pointer !important;
+    animation: pulse-red 2s ease-in-out infinite;
+}
+
+.parking-slot-box.occupied:hover {
+    background-color: rgba(239, 68, 68, 0.8) !important;
+    border-color: #f87171 !important;
+    transform: scale(1.05);
+}
+
+/* Reserved slots styling */
+.parking-slot-box.reserved {
+    background-color: rgba(250, 204, 21, 0.5);
+    border-color: #facc15;
+    color: #fef9c3;
+    cursor: pointer;
+}
+
+.parking-slot-box.reserved:hover {
+    background-color: rgba(250, 204, 21, 0.7);
+    border-color: #fde047;
+}
+
+/* Available slots with improved hover */
+.parking-slot-box.available {
+    cursor: pointer;
+}
+
+/* Responsive legend */
+@media (max-width: 768px) {
+    .slot-legend {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: flex-start;
+    }
+    
+    .legend-item {
+        width: 100%;
+    }
+}
+
 /* --- Modal Styles --- */
 .modal-overlay {
     position: fixed;

@@ -14,6 +14,7 @@ export default function ReservationModal({ slot, onConfirm, onCancel, onBookingC
     const [startTime, setStartTime] = useState('');
     const [endTime, setEndTime] = useState('');
     const [calculatedPrice, setCalculatedPrice] = useState(0);
+    const [priceBreakdown, setPriceBreakdown] = useState(null);
     const [isBooking, setIsBooking] = useState(false);
     const [validationError, setValidationError] = useState('');
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('Credit Card');
@@ -38,6 +39,7 @@ export default function ReservationModal({ slot, onConfirm, onCancel, onBookingC
             setStartTime('');
             setEndTime('');
             setCalculatedPrice(0);
+            setPriceBreakdown(null);
             setIsBooking(false);
             setValidationError('');
             setSelectedPaymentMethod('Credit Card');
@@ -53,6 +55,7 @@ export default function ReservationModal({ slot, onConfirm, onCancel, onBookingC
             calculatePrice();
         } else {
             setCalculatedPrice(0);
+            setPriceBreakdown(null);
         }
     }, [slot, startTime, endTime, step]);
 
@@ -65,26 +68,94 @@ export default function ReservationModal({ slot, onConfirm, onCancel, onBookingC
             
             if (isNaN(start) || isNaN(end) || end <= start) {
                 setCalculatedPrice(0);
+                setPriceBreakdown(null);
                 return;
             }
 
             const durationMillis = end - start;
             const durationHours = durationMillis / (1000 * 60 * 60);
+            const roundedHours = Math.max(1.0, Math.ceil(durationHours));
 
-            let hourlyRate = BASE_RATE_PER_HOUR;
+            let baseRate = BASE_RATE_PER_HOUR;
+            let surcharge = 0;
+            let surchargeName = '';
 
             if (slot.type === 'EV' || slot.type === 'Two-Wheeler-EV') {
-                hourlyRate += EV_SURCHARGE;
+                surcharge = EV_SURCHARGE;
+                surchargeName = 'EV Charging';
             } else if (slot.type === 'VIP') {
-                hourlyRate += VIP_SURCHARGE;
+                surcharge = VIP_SURCHARGE;
+                surchargeName = 'VIP Service';
             }
 
-            const calculated = Math.max(1.0, Math.ceil(durationHours)) * hourlyRate;
+            const hourlyRate = baseRate + surcharge;
+            const calculated = roundedHours * hourlyRate;
+            
             setCalculatedPrice(calculated);
+            setPriceBreakdown({
+                hours: roundedHours,
+                baseRate: baseRate,
+                surcharge: surcharge,
+                surchargeName: surchargeName,
+                hourlyRate: hourlyRate,
+                total: calculated
+            });
         } catch (e) {
             console.error("Error calculating price:", e);
             setCalculatedPrice(0);
+            setPriceBreakdown(null);
         }
+    };
+
+    const formatDateTime = (dateTimeString) => {
+        if (!dateTimeString) return '';
+        const date = new Date(dateTimeString);
+        return date.toLocaleString('en-IN', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    };
+
+    const getAvailableTimeSlots = () => {
+        if (!slot.reservations || slot.reservations.length === 0) {
+            return "Available anytime";
+        }
+
+        const now = new Date();
+        const sortedReservations = [...slot.reservations]
+            .filter(res => new Date(res.endTime) > now)
+            .sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+
+        if (sortedReservations.length === 0) {
+            return "Available anytime";
+        }
+
+        const timeSlots = [];
+        
+        // Check if available now until first booking
+        const firstBooking = new Date(sortedReservations[0].startTime);
+        if (firstBooking > now) {
+            timeSlots.push(`Now - ${formatDateTime(sortedReservations[0].startTime)}`);
+        }
+
+        // Check gaps between bookings
+        for (let i = 0; i < sortedReservations.length - 1; i++) {
+            const currentEnd = new Date(sortedReservations[i].endTime);
+            const nextStart = new Date(sortedReservations[i + 1].startTime);
+            
+            if (nextStart - currentEnd > 0) {
+                timeSlots.push(`${formatDateTime(sortedReservations[i].endTime)} - ${formatDateTime(sortedReservations[i + 1].startTime)}`);
+            }
+        }
+
+        // Available after last booking
+        const lastBooking = sortedReservations[sortedReservations.length - 1];
+        timeSlots.push(`After ${formatDateTime(lastBooking.endTime)}`);
+
+        return timeSlots;
     };
 
     const handleReserveClick = () => {
@@ -174,7 +245,6 @@ export default function ReservationModal({ slot, onConfirm, onCancel, onBookingC
                 return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
             };
 
-            // FIXED: Create clean booking data object
             const bookingData = {
                 userId: parseInt(userId),
                 slotId: slot.id,
@@ -194,9 +264,7 @@ export default function ReservationModal({ slot, onConfirm, onCancel, onBookingC
             });
 
             console.log("Response status:", response.status);
-            console.log("Response headers:", response.headers);
 
-            // FIXED: Read response as text first to see what we're getting
             const responseText = await response.text();
             console.log("Raw response:", responseText);
 
@@ -204,7 +272,6 @@ export default function ReservationModal({ slot, onConfirm, onCancel, onBookingC
                 throw new Error(`Booking failed: ${responseText}`);
             }
 
-            // FIXED: Try to parse as JSON only if we got a valid response
             let result;
             try {
                 result = JSON.parse(responseText);
@@ -231,28 +298,24 @@ export default function ReservationModal({ slot, onConfirm, onCancel, onBookingC
         setPaymentError('');
 
         if (selectedPaymentMethod === 'Credit Card' || selectedPaymentMethod === 'Debit Card') {
-            // Validate card number (16 digits)
             const cardRegex = /^[0-9]{16}$/;
             if (!cardRegex.test(cardNumber.replace(/\s/g, ''))) {
                 setPaymentError('Card number must be 16 digits');
                 return false;
             }
 
-            // Validate CVV (3 digits)
             const cvvRegex = /^[0-9]{3}$/;
             if (!cvvRegex.test(cvv)) {
                 setPaymentError('CVV must be 3 digits');
                 return false;
             }
         } else if (selectedPaymentMethod === 'UPI') {
-            // Validate UPI ID (format: username@bank)
             const upiRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9]+$/;
             if (!upiRegex.test(upiId)) {
                 setPaymentError('Invalid UPI ID format (e.g., username@bank)');
                 return false;
             }
         }
-        // Cash doesn't need validation
 
         return true;
     };
@@ -288,11 +351,61 @@ export default function ReservationModal({ slot, onConfirm, onCancel, onBookingC
             <div className="modal-content">
                 {step === 1 && (
                     <>
-                        <h2>Slot {slot.slotNumber} - Reservations</h2>
-                        <p className="modal-subtitle">No current reservations for this slot.</p>
+                        <h2>Slot {slot.slotNumber} - Details</h2>
+                        
+                        {/* Show current status */}
+                        <div className="slot-status-info">
+                            {slot.isOccupied ? (
+                                <>
+                                    <p className="status-occupied">⛔ Currently Occupied</p>
+                                    {slot.activeBooking && (
+                                        <div className="active-booking-info">
+                                            <p><strong>Occupied until:</strong> {formatDateTime(slot.activeBooking.endTime)}</p>
+                                        </div>
+                                    )}
+                                </>
+                            ) : (
+                                <p className="status-available">✅ Currently Available</p>
+                            )}
+                        </div>
+
+                        {/* Show available time slots */}
+                        <div className="available-times-section">
+                            <h3>Available Booking Times</h3>
+                            {Array.isArray(getAvailableTimeSlots()) ? (
+                                <ul className="time-slots-list">
+                                    {getAvailableTimeSlots().map((timeSlot, index) => (
+                                        <li key={index}>{timeSlot}</li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <p className="all-available">{getAvailableTimeSlots()}</p>
+                            )}
+                        </div>
+
+                        {/* Show upcoming reservations if any */}
+                        {slot.reservations && slot.reservations.length > 0 && (
+                            <div className="upcoming-bookings">
+                                <h3>Upcoming Reservations</h3>
+                                <ul className="reservations-list">
+                                    {slot.reservations.map((reservation, index) => (
+                                        <li key={index}>
+                                            {formatDateTime(reservation.startTime)} - {formatDateTime(reservation.endTime)}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+
                         <div className="modal-actions">
                             <button onClick={handleCancel} className="btn-secondary">Close</button>
-                            <button onClick={handleReserveClick} className="btn-primary">Reserve</button>
+                            <button 
+                                onClick={handleReserveClick} 
+                                className="btn-primary"
+                                disabled={slot.isOccupied}
+                            >
+                                {slot.isOccupied ? 'Slot Occupied' : 'Reserve Now'}
+                            </button>
                         </div>
                     </>
                 )}
@@ -336,13 +449,37 @@ export default function ReservationModal({ slot, onConfirm, onCancel, onBookingC
                             />
                         </div>
 
-                        <div className="price-display">
-                            Estimated Price: <strong>₹{calculatedPrice.toFixed(2)}</strong>
-                        </div>
+                        {priceBreakdown && (
+                            <div className="price-breakdown">
+                                <h3>Price Breakdown</h3>
+                                <div className="breakdown-item">
+                                    <span>Duration:</span>
+                                    <span>{priceBreakdown.hours} hour{priceBreakdown.hours > 1 ? 's' : ''}</span>
+                                </div>
+                                <div className="breakdown-item">
+                                    <span>Base Rate:</span>
+                                    <span>₹{priceBreakdown.baseRate}/hour</span>
+                                </div>
+                                {priceBreakdown.surcharge > 0 && (
+                                    <div className="breakdown-item">
+                                        <span>{priceBreakdown.surchargeName}:</span>
+                                        <span>₹{priceBreakdown.surcharge}/hour</span>
+                                    </div>
+                                )}
+                                <div className="breakdown-item subtotal">
+                                    <span>Hourly Rate:</span>
+                                    <span>₹{priceBreakdown.hourlyRate}/hour</span>
+                                </div>
+                                <div className="breakdown-item total">
+                                    <span>Total Amount:</span>
+                                    <span>₹{priceBreakdown.total.toFixed(2)}</span>
+                                </div>
+                            </div>
+                        )}
 
                         <div className="modal-actions">
                             <button onClick={handleCancel} className="btn-secondary" disabled={isBooking}>Cancel</button>
-                            <button onClick={handleProceedToPayment} className="btn-primary" disabled={isBooking}>
+                            <button onClick={handleProceedToPayment} className="btn-primary" disabled={isBooking || !priceBreakdown}>
                                 {isBooking ? 'Processing...' : 'Proceed to Payment'}
                             </button>
                         </div>
@@ -462,9 +599,29 @@ export default function ReservationModal({ slot, onConfirm, onCancel, onBookingC
                             </div>
                         )}
 
-                        <div className="price-display total">
-                            Total Amount: <strong>₹{calculatedPrice.toFixed(2)}</strong>
-                        </div>
+                        {priceBreakdown && (
+                            <div className="price-breakdown payment-summary">
+                                <h3>Payment Summary</h3>
+                                <div className="breakdown-item">
+                                    <span>Duration:</span>
+                                    <span>{priceBreakdown.hours} hour{priceBreakdown.hours > 1 ? 's' : ''}</span>
+                                </div>
+                                <div className="breakdown-item">
+                                    <span>Base Rate:</span>
+                                    <span>₹{priceBreakdown.baseRate}/hour</span>
+                                </div>
+                                {priceBreakdown.surcharge > 0 && (
+                                    <div className="breakdown-item">
+                                        <span>{priceBreakdown.surchargeName}:</span>
+                                        <span>₹{priceBreakdown.surcharge}/hour</span>
+                                    </div>
+                                )}
+                                <div className="breakdown-item total">
+                                    <span>Total Amount:</span>
+                                    <span>₹{priceBreakdown.total.toFixed(2)}</span>
+                                </div>
+                            </div>
+                        )}
 
                         <div className="modal-actions">
                             <button onClick={() => setStep(2)} className="btn-secondary" disabled={isBooking}>Back</button>

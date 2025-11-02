@@ -706,3 +706,233 @@
 .modal-content::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.3);
 }
+
+/* Add these new styles to your existing App.css */
+
+/* Slot Status Information */
+.slot-status-info {
+    margin: 1.5rem 0;
+    padding: 1rem;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.status-occupied {
+    color: #ff6b7a;
+    font-size: 1.1rem;
+    font-weight: bold;
+    margin: 0;
+}
+
+.status-available {
+    color: #10b981;
+    font-size: 1.1rem;
+    font-weight: bold;
+    margin: 0;
+}
+
+.active-booking-info {
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    background: rgba(255, 107, 122, 0.1);
+    border: 1px solid rgba(255, 107, 122, 0.3);
+    border-radius: 6px;
+}
+
+.active-booking-info p {
+    margin: 0.25rem 0;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Available Times Section */
+.available-times-section {
+    margin: 1.5rem 0;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+}
+
+.available-times-section h3 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    font-size: 1rem;
+    color: white;
+    text-align: center;
+}
+
+.time-slots-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.time-slots-list li {
+    padding: 0.75rem;
+    margin: 0.5rem 0;
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: 6px;
+    color: #10b981;
+    font-size: 0.9rem;
+}
+
+.all-available {
+    text-align: center;
+    color: #10b981;
+    font-weight: bold;
+    margin: 0;
+}
+
+/* Upcoming Bookings */
+.upcoming-bookings {
+    margin: 1.5rem 0;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+}
+
+.upcoming-bookings h3 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    font-size: 1rem;
+    color: white;
+    text-align: center;
+}
+
+.reservations-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.reservations-list li {
+    padding: 0.75rem;
+    margin: 0.5rem 0;
+    background: rgba(250, 204, 21, 0.1);
+    border: 1px solid rgba(250, 204, 21, 0.3);
+    border-radius: 6px;
+    color: #facc15;
+    font-size: 0.85rem;
+}
+
+/* Price Breakdown */
+.price-breakdown {
+    margin: 1.5rem 0;
+    padding: 1.25rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+}
+
+.price-breakdown h3 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+    color: white;
+    text-align: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 0.75rem;
+}
+
+.breakdown-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.6rem 0;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.95rem;
+}
+
+.breakdown-item span:first-child {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.breakdown-item span:last-child {
+    font-weight: 500;
+    color: white;
+}
+
+.breakdown-item.subtotal {
+    margin-top: 0.5rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    font-weight: 600;
+}
+
+.breakdown-item.total {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 2px solid rgba(255, 255, 255, 0.2);
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: white;
+}
+
+.breakdown-item.total span {
+    color: white;
+}
+
+.price-breakdown.payment-summary {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Updated Parking Slot Colors */
+.parking-slot-box.occupied {
+    background-color: rgba(239, 68, 68, 0.6) !important;
+    border-color: #ef4444 !important;
+    color: #fee2e2 !important;
+    cursor: pointer !important; /* Allow clicking to see details */
+    animation: pulse-red 2s ease-in-out infinite;
+}
+
+@keyframes pulse-red {
+    0%, 100% {
+        opacity: 0.6;
+    }
+    50% {
+        opacity: 0.8;
+    }
+}
+
+/* Reserved slots (future bookings) */
+.parking-slot-box.reserved {
+    background-color: rgba(250, 204, 21, 0.5);
+    border-color: #facc15;
+    color: #fef9c3;
+    cursor: pointer; /* Allow clicking to see details */
+}
+
+/* Improve modal readability */
+.modal-subtitle {
+    opacity: 0.8;
+    margin-bottom: 1.5rem;
+    color: white;
+    text-align: center;
+}
+
+/* Disable button styling */
+.btn-primary:disabled,
+.btn-secondary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .price-breakdown {
+        padding: 1rem;
+    }
+    
+    .breakdown-item {
+        font-size: 0.9rem;
+    }
+    
+    .time-slots-list li,
+    .reservations-list li {
+        font-size: 0.85rem;
+        padding: 0.6rem;
+    }
+}
