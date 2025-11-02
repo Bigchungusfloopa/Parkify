@@ -41,11 +41,18 @@ public class ParkifyApplication {
 			sampleUser.setName("Ada"); // Regular user name
 			sampleUser.setEmail("test@example.com"); // Regular user email
 			sampleUser.setPassword(passwordEncoder.encode("password")); // Regular user password
-			// No role set
+			sampleUser.setRole("ROLE_USER");
 			userRepository.save(sampleUser);
 			System.out.println("Created sample user (Ada).");
 
-			// Admin user creation removed
+			// --- Create Hardcoded Admin User ---
+			User adminUser = new User();
+			adminUser.setName("Admin");
+			adminUser.setEmail("admin@parkify.com");
+			adminUser.setPassword(passwordEncoder.encode("admin123"));
+			adminUser.setRole("ROLE_ADMIN");
+			userRepository.save(adminUser);
+			System.out.println("Created admin user.");
 
 			// --- Create Floors and Slots ---
             Floor floor1 = new Floor();

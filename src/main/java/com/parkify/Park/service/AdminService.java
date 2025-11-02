@@ -72,12 +72,7 @@ public class AdminService {
         return userRepository.findAll();
     }
 
-    public User updateUserRole(Long userId, String role) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
-        user.setRole(role);
-        return userRepository.save(user);
-    }
+    // Role management removed - only hardcoded admin can have admin role
 
     public void deleteUser(Long userId) {
         if (!userRepository.existsById(userId)) {

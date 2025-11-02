@@ -171,6 +171,7 @@ export default function Admin() {
             fetchDashboardStats();
             fetchBookings();
             fetchFloors();
+            fetchSlots(); // ← ADD THIS LINE
         } else if (activeTab === 'users') {
             fetchUsers();
         } else if (activeTab === 'floors') {
@@ -389,24 +390,46 @@ export default function Admin() {
     };
 
     const getFloorOccupancyData = () => {
-        // First, get all slots
-        const allSlots = slots.length > 0 ? slots : [];
+    console.log('Generating floor occupancy data...');
+    console.log('Available floors:', floors);
+    console.log('Available slots:', slots);
+    
+    // Add safety checks
+    if (!floors || floors.length === 0) {
+        console.warn('No floors available for chart');
+        return [];
+    }
+    
+    if (!slots || slots.length === 0) {
+        console.warn('No slots available for chart');
+        return [];
+    }
+    
+    return floors.map(floor => {
+        // Filter slots that belong to this floor - check both possible property names
+        const floorSlots = slots.filter(s => {
+            const slotFloorId = s.floor?.id || s.floorId;
+            return slotFloorId === floor.id;
+        });
         
-        return floors.map(floor => {
-            // Filter slots that belong to this floor
-            const floorSlots = allSlots.filter(s => s.floor?.id === floor.id || s.floorId === floor.id);
-            const occupied = floorSlots.filter(s => s.isOccupied).length;
-            const available = floorSlots.length - occupied;
-            
-            console.log(`Floor ${floor.name}: ${floorSlots.length} total slots, ${occupied} occupied, ${available} available`);
-            
-            return {
-                name: floor.name,
-                Occupied: occupied,
-                Available: available
-            };
-        }).filter(data => data.Occupied > 0 || data.Available > 0); // Only show floors with slots
-    };
+        // Count occupied slots - check both possible property names
+        const occupied = floorSlots.filter(s => s.isOccupied || s.occupied).length;
+        const available = floorSlots.length - occupied;
+        
+        console.log(`Floor ${floor.name}:`, {
+            totalSlots: floorSlots.length,
+            occupied,
+            available,
+            floorId: floor.id
+        });
+        
+        return {
+            name: floor.name,
+            Occupied: occupied,
+            Available: available
+        };
+    }).filter(data => data.Occupied > 0 || data.Available > 0);
+};
 
     const getRevenueData = () => {
         const revenueByDate = bookings.reduce((acc, booking) => {
@@ -552,33 +575,25 @@ export default function Admin() {
                     )}
 
                     {activeTab === 'users' && (
-                        <div className="users-tab">
-                            <h2>User Management</h2>
-                            <div className="users-list">
-                                {users.map(user => (
-                                    <div key={user.id} className="user-card">
-                                        <div className="user-info">
-                                            <h4>{user.name}</h4>
-                                            <p>{user.email}</p>
-                                            <span className={`role-badge ${user.role}`}>
-                                                {user.role || 'ROLE_USER'}
-                                            </span>
-                                        </div>
-                                        <div className="user-actions">
-                                            <select 
-                                                value={user.role || 'ROLE_USER'} 
-                                                onChange={(e) => updateUserRole(user.id, e.target.value)}
-                                                className="role-select"
-                                            >
-                                                <option value="ROLE_USER">User</option>
-                                                <option value="ROLE_ADMIN">Admin</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
+    <div className="users-tab">
+        <h2>User Details</h2>
+        <div className="users-list">
+            {users.map(user => (
+                <div key={user.id} className="user-card">
+                    <div className="user-info">
+                        <h4>{user.name}</h4>
+                        <p>{user.email}</p>
+                    </div>
+                    <div className="user-role-center">
+                        <span className={`role-badge-large ${user.role}`}>
+                            {user.role === 'ROLE_ADMIN' ? 'Admin' : 'User'}
+                        </span>
+                    </div>
+                </div>
+            ))}
+        </div>
+    </div>
+)}
 
                     {activeTab === 'floors' && (
                         <div className="floors-tab">

@@ -56,20 +56,6 @@ public class AdminController {
     }
 
     /**
-     * Update user role
-     */
-    @PutMapping("/users/{userId}/role")
-    public ResponseEntity<?> updateUserRole(@PathVariable Long userId, @RequestBody Map<String, String> request) {
-        try {
-            String role = request.get("role");
-            User user = adminService.updateUserRole(userId, role);
-            return ResponseEntity.ok(user);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
-
-    /**
      * Delete user
      */
     @DeleteMapping("/users/{userId}")

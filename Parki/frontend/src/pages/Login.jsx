@@ -6,42 +6,55 @@ export default function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState(null);
-    const [isAdminLogin, setIsAdminLogin] = useState(false);
 
     const handleLogin = async (e) => {
-        e.preventDefault();
-        setError(null);
-        try {
-            const response = await fetch('http://localhost:8080/api/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
-            });
-            if (!response.ok) {
-                const errorMessage = await response.text();
-                throw new Error(errorMessage || 'Login failed');
-            }
-
-            const data = await response.json();
-            sessionStorage.setItem('userName', data.name);
-            const userId = data.userId || data.id;
-            if (userId) {
-                sessionStorage.setItem('userId', userId.toString());
-            } else {
-                throw new Error("Login successful, but user ID was missing.");
-            }
-
-            // Check if user has admin role and redirect accordingly
-            if (data.role === 'ROLE_ADMIN' || isAdminLogin) {
-                navigate('/admin');
-            } else {
-                navigate('/dashboard');
-            }
-
-        } catch (err) {
-            setError(err.message);
+    e.preventDefault();
+    setError(null);
+    try {
+        const response = await fetch('http://localhost:8080/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+        
+        if (!response.ok) {
+            const errorMessage = await response.text();
+            throw new Error(errorMessage || 'Login failed');
         }
-    };
+
+        const data = await response.json();
+        console.log('Login response data:', data); // Check this in browser console
+        
+        sessionStorage.setItem('userName', data.name);
+        const userId = data.userId || data.id;
+        if (userId) {
+            sessionStorage.setItem('userId', userId.toString());
+        } else {
+            throw new Error("Login successful, but user ID was missing.");
+        }
+
+        // Store role in sessionStorage
+        if (data.role) {
+            sessionStorage.setItem('userRole', data.role);
+        }
+
+        // Debug: Check what role we're getting
+        console.log('User role:', data.role);
+        
+        // Check if user has admin role and redirect accordingly
+        if (data.role === 'ROLE_ADMIN') {
+            console.log('Redirecting to admin panel');
+            navigate('/admin');
+        } else {
+            console.log('Redirecting to user dashboard');
+            navigate('/dashboard');
+        }
+
+    } catch (err) {
+        setError(err.message);
+        console.error('Login error:', err);
+    }
+};
 
     return (
         <div className="auth-container">
@@ -64,25 +77,11 @@ export default function Login() {
                         onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password"
                     />
                 </div>
-                
-                {/* Admin Login Toggle */}
-                <div className="admin-toggle">
-                    <label>
-                        <input
-                            type="checkbox"
-                            checked={isAdminLogin}
-                            onChange={(e) => setIsAdminLogin(e.target.checked)}
-                        />
-                        Admin Login
-                    </label>
-                </div>
 
                 <button type="submit" className="auth-button">
-                    {isAdminLogin ? 'Login as Admin' : 'Login'}
+                    Login
                 </button>
-                
 
-                {/* Add this new section */}
                 <div className="auth-link">
                     <Link to="/forgot-password">Forgot your password?</Link>
                 </div>
@@ -91,8 +90,6 @@ export default function Login() {
                     <span>Don't have an account? </span>
                     <Link to="/signup">Sign Up</Link>
                 </div>
-
-            
             </form>
         </div>
     );

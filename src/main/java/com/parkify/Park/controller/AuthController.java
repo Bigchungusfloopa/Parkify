@@ -32,20 +32,21 @@ public class AuthController {
 
     // --- Login Endpoint ---
    @PostMapping("/login")
-    public ResponseEntity<?> loginUser(@RequestBody LoginDto loginDto) {
-        try {
-            User user = authService.loginUser(loginDto);
-            // Return only name and userId
-            Map<String, Object> response = Map.of(
-                "message", "Login successful",
-                "name", user.getName(),
-                "userId", user.getId()
-            );
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.UNAUTHORIZED);
-        }
+public ResponseEntity<?> loginUser(@RequestBody LoginDto loginDto) {
+    try {
+        User user = authService.loginUser(loginDto);
+        // Return name, userId, and role
+        Map<String, Object> response = Map.of(
+            "message", "Login successful",
+            "name", user.getName(),
+            "userId", user.getId(),
+            "role", user.getRole() // Add role to response
+        );
+        return ResponseEntity.ok(response);
+    } catch (Exception e) {
+        return new ResponseEntity<>(e.getMessage(), HttpStatus.UNAUTHORIZED);
     }
+}
 
     // --- Forgot Password Endpoints ---
 
