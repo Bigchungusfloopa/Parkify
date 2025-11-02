@@ -18,7 +18,7 @@
 
 .dashboard-header {
   position: relative;
-  z-index: 10;
+  z-index: 2; /* Lower than modals */
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -525,6 +525,7 @@
 }
 
 /* --- Modal Styles --- */
+/* FIXED: Increased z-index to ensure modals are above header */
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -536,7 +537,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 1000;
+    z-index: 9999; /* VERY HIGH - Above everything */
 }
 .modal-content {
     background: #1e293b;
@@ -545,6 +546,8 @@
     border: 1px solid #334155;
     width: 90%;
     max-width: 450px;
+    position: relative;
+    z-index: 10000; /* EVEN HIGHER - Above overlay */
 }
 .modal-content h2 {
     margin-top: 0;

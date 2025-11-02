@@ -357,7 +357,7 @@ export default function ReservationModal({ slot, onConfirm, onCancel, onBookingC
                         <div className="slot-status-info">
                             {slot.isOccupied ? (
                                 <>
-                                    <p className="status-occupied">⛔ Currently Occupied</p>
+                                    <p className="status-occupied"> Currently Occupied</p>
                                     {slot.activeBooking && (
                                         <div className="active-booking-info">
                                             <p><strong>Occupied until:</strong> {formatDateTime(slot.activeBooking.endTime)}</p>
@@ -365,7 +365,7 @@ export default function ReservationModal({ slot, onConfirm, onCancel, onBookingC
                                     )}
                                 </>
                             ) : (
-                                <p className="status-available">✅ Currently Available</p>
+                                <p className="status-available"> Currently Available</p>
                             )}
                         </div>
 
@@ -449,33 +449,7 @@ export default function ReservationModal({ slot, onConfirm, onCancel, onBookingC
                             />
                         </div>
 
-                        {priceBreakdown && (
-                            <div className="price-breakdown">
-                                <h3>Price Breakdown</h3>
-                                <div className="breakdown-item">
-                                    <span>Duration:</span>
-                                    <span>{priceBreakdown.hours} hour{priceBreakdown.hours > 1 ? 's' : ''}</span>
-                                </div>
-                                <div className="breakdown-item">
-                                    <span>Base Rate:</span>
-                                    <span>₹{priceBreakdown.baseRate}/hour</span>
-                                </div>
-                                {priceBreakdown.surcharge > 0 && (
-                                    <div className="breakdown-item">
-                                        <span>{priceBreakdown.surchargeName}:</span>
-                                        <span>₹{priceBreakdown.surcharge}/hour</span>
-                                    </div>
-                                )}
-                                <div className="breakdown-item subtotal">
-                                    <span>Hourly Rate:</span>
-                                    <span>₹{priceBreakdown.hourlyRate}/hour</span>
-                                </div>
-                                <div className="breakdown-item total">
-                                    <span>Total Amount:</span>
-                                    <span>₹{priceBreakdown.total.toFixed(2)}</span>
-                                </div>
-                            </div>
-                        )}
+                        
 
                         <div className="modal-actions">
                             <button onClick={handleCancel} className="btn-secondary" disabled={isBooking}>Cancel</button>
