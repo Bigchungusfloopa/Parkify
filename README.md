@@ -70,8 +70,4 @@ Contributing
 - Follow existing code style.
 - Add unit tests for new behavior and run `./mvnw test` before submitting PRs.
 
-License
-- Add a LICENSE file to the repo or specify an open-source license you prefer.
 
-Contact
-- Open an issue or PR in this repository for questions, fixes or feature requests.
