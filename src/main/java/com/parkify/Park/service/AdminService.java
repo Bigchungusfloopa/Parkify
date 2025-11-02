@@ -51,14 +51,16 @@ public class AdminService {
         Double totalRevenue = bookingRepository.sumPriceByStatus("COMPLETED");
         if (totalRevenue == null) totalRevenue = 0.0;
 
-        // Calculate available slots
-        long availableSlots = slotRepository.countByFloorIdAndIsOccupied(0L, false); // 0L to count all floors
+        // FIXED: Calculate occupied and available slots correctly
+        long occupiedSlots = slotRepository.countByIsOccupied(true);
+        long availableSlots = totalSlots - occupiedSlots;
         
         stats.put("totalUsers", totalUsers);
         stats.put("totalBookings", totalBookings);
         stats.put("activeBookings", activeBookings);
         stats.put("totalFloors", totalFloors);
         stats.put("totalSlots", totalSlots);
+        stats.put("occupiedSlots", occupiedSlots);  // ADDED
         stats.put("availableSlots", availableSlots);
         stats.put("totalRevenue", totalRevenue);
         
